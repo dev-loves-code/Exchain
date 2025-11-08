@@ -1,0 +1,24 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class PaymentMethod extends Model
+{
+    protected $primaryKey = 'payment_method_id';
+    const UPDATED_AT = null;
+
+    protected $fillable = [
+        'user_id',
+        'method_type',
+        'card_last_four',
+        'card_brand',
+    ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+}
