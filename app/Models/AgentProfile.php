@@ -22,12 +22,14 @@ class AgentProfile extends Model
         'working_hours_start',
         'working_hours_end',
         'commission_rate',
+        'status',
     ];
 
     protected $casts = [
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
         'commission_rate' => 'decimal:2',
+        'status' => 'string',
     ];
 
     public function agent(): BelongsTo

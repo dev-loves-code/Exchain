@@ -19,6 +19,7 @@ return new class extends Migration
             $table->time('working_hours_start')->nullable();
             $table->time('working_hours_end')->nullable();
             $table->decimal('commission_rate', 5, 2)->default(0);
+            $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
             $table->timestamp('created_at')->useCurrent();
             
             $table->foreign('agent_id')->references('user_id')->on('users')->onDelete('cascade');
