@@ -34,6 +34,8 @@ Route::middleware(['jwt'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
     });
+
+     Route::get('/agents', [AgentProfileController::class, 'listAgents']);
     
     
      Route::prefix('agent')->middleware(['role:agent'])->group(function () {
@@ -46,9 +48,6 @@ Route::middleware(['jwt'])->group(function () {
     
     
     Route::prefix('admin')->middleware(['role:admin'])->group(function () {
-        
-        Route::get('/agents', [AgentProfileController::class, 'listAgents']);
-        
         
         Route::patch('/agents/{agentId}/status', [AgentProfileController::class, 'updateStatus']);
     });
