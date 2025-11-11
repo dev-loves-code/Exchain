@@ -16,3 +16,9 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
     });
 });
+
+Route::middleware(['jwt'])->prefix('/refund')->group(function () {
+    Route::post('/request-create',[\App\Http\Controllers\RefundRequestsController::class,'create']);
+    Route::get('/request-view/{id}',[\App\Http\Controllers\RefundRequestsController::class,'viewSingleRefundRequest']);
+
+});
