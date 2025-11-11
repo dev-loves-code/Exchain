@@ -17,6 +17,7 @@ class SupportRequestsController extends Controller
      **/
     public function store(Request $request)
     {
+        // Validation for input
         try {
             $request->validate([
                 'subject' => 'required|string|max:150',
@@ -27,7 +28,7 @@ class SupportRequestsController extends Controller
                 'errors' => $e->errors()
             ]);
         }
-
+        // Creating support Request
         $support = SupportRequest::create([
             'user_id' => $request->user()->user_id,
             'subject' => $request->subject,
@@ -35,6 +36,7 @@ class SupportRequestsController extends Controller
             'status' => 'pending',
         ]);
 
+        // Returning response
         return response()->json([
             'success'=>true,
             'message'=> 'Support request sent successfully',
@@ -43,23 +45,7 @@ class SupportRequestsController extends Controller
 
     }
 
-    public function viewAllRequests(Request $request){
 
-        $query = SupportRequest::where('user_id',$request->user()->user_id);
-
-        $supportRequests = $query->latest()->get();
-
-        $result = $supportRequests->map(function ($req) {
-            return [
-                'support_id' => $req->support_id,
-                'subject' => $req->subject,
-                'status' => $req->status,
-                'sent_at' => $req->created_at,
-            ];
-        });
-
-        return response()->json($result);
-    }
 
     public function showSingleRequest(Request $request, $id)
     {
@@ -70,6 +56,8 @@ class SupportRequestsController extends Controller
         return response()->json([
             'support_request' => [
                 'support_id' => $supportRequest->support_id,
+                'user_full_name' => $supportRequest->user ? $supportRequest->user->full_name : null,
+                'user_email' => $supportRequest->user ? $supportRequest->user->email : null,
                 'subject' => $supportRequest->subject,
                 'description' => $supportRequest->description,
                 'status' => $supportRequest->status,
@@ -147,36 +135,10 @@ class SupportRequestsController extends Controller
 
 
     }
+
     /**
     Admin Side
      **/
-
-    public function viewAllSupportRequestsAdmin(Request $request)
-    {
-        $role = $request->user()->role->role_name;
-
-        if($role !== 'admin')
-        {
-            return response() ->json([
-                'error' => 'Unauthorized User'
-            ], 403);
-        }
-        $supportRequests = SupportRequest::with('user')->get();
-
-        return response()->json([
-            'support_requests' => $supportRequests->map(function ($req) {
-                return [
-                    'support_id' => $req->support_id,
-                    'user_full_name' => $req->user ? $req->user->full_name : null,
-                    'user_email' => $req->user ? $req->user->email : null,
-                    'subject' => $req->subject,
-                    'status' => $req->status,
-                    'received_at' => $req->created_at,
-                ];
-            }),
-        ]);
-
-    }
 
     public function showSingleRequestAdmin(Request $request, $id)
     {
@@ -203,21 +165,24 @@ class SupportRequestsController extends Controller
         ]);
     }
 
+    // Update status function
     public function update(Request $request, $id)
     {
         $role = $request->user()->role->role_name;
+        $valid_statuses = ['pending', 'resolved', 'closed'];
 
 
+    // Validation for status input
     try{
         $request->validate([
-            'status' => 'required|in:pending,resolved,closed',
+            'status' => ['nullable',Rule::in($valid_statuses)],
         ]);
     }catch(ValidationException $e){
         return response() -> json([
             'errors' => $e->errors()
         ]);
     }
-
+        // Check if !Admin
         if($role !== 'admin')
         {
             return response() ->json([
@@ -227,6 +192,7 @@ class SupportRequestsController extends Controller
 
         $support_request = SupportRequest::findOrFail($id);
 
+        // Update Status
         $support_request->update([
             'status' => $request->status,
             'updated_at' => now(),

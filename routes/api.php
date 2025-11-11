@@ -22,16 +22,20 @@ Route::middleware(['jwt'])->group(function () {
 /**
 Routes for Support Request
  **/
-Route::middleware(['jwt'])->group(function () {
-    Route::prefix('support')->group(function () {
-        /**Normal User**/
+
+
+Route::middleware(['jwt'])->prefix('support')->group(function () {
+    /**Normal User Routes**/
     Route::post('/request', [SupportRequestsController::class,'store']);
-    Route::get('/request', [SupportRequestsController::class,'viewAllRequests']);
+
+    /**Common Routes**/
     Route::get('/request/{id}', [SupportRequestsController::class,'showSingleRequest']);
-    Route::get('/requestFilter', [SupportRequestsController::class,'filterSupportRequests']);
-        /**Admin**/
-    Route::get('/admin',[SupportRequestsController::class,'viewAllSupportRequestsAdmin']);
-    Route::get('/admin/{id}',[SupportRequestsController::class,'showSingleRequestAdmin']);
-    Route::put('/admin/{id}', [SupportRequestsController::class,'update']);
-});
+    Route::get('/request', [SupportRequestsController::class,'filterSupportRequests']);
+
+    /**Admin Route**/
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/requestAdmin/{id}', [SupportRequestsController::class,'showSingleRequestAdmin']);
+        Route::put('/request/{id}', [SupportRequestsController::class, 'update']);
+    });
+
 });
