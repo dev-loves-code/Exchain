@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\SupportRequest;
-use http\Env\Response;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use mysql_xdevapi\Result;
 
 class SupportRequestsController extends Controller
 {
@@ -56,6 +54,7 @@ class SupportRequestsController extends Controller
                 'support_id' => $req->support_id,
                 'subject' => $req->subject,
                 'status' => $req->status,
+                'sent_at' => $req->created_at,
             ];
         });
 
@@ -72,6 +71,7 @@ class SupportRequestsController extends Controller
             'support_request' => [
                 'support_id' => $supportRequest->support_id,
                 'subject' => $supportRequest->subject,
+                'description' => $supportRequest->description,
                 'status' => $supportRequest->status,
                 'sent_at' => $supportRequest->created_at,
 
@@ -121,8 +121,6 @@ class SupportRequestsController extends Controller
             }
         }
 
-
-
         $supportRequests = $query->get();
 
         return response()->json(
@@ -156,7 +154,6 @@ class SupportRequestsController extends Controller
     public function viewAllSupportRequestsAdmin(Request $request)
     {
         $role = $request->user()->role->role_name;
-//        $email = $request->user()->email;
 
         if($role !== 'admin')
         {
@@ -171,9 +168,10 @@ class SupportRequestsController extends Controller
                 return [
                     'support_id' => $req->support_id,
                     'user_full_name' => $req->user ? $req->user->full_name : null,
+                    'user_email' => $req->user ? $req->user->email : null,
                     'subject' => $req->subject,
                     'status' => $req->status,
-                    'user_email' => $req->user ? $req->user->email : null,
+                    'received_at' => $req->created_at,
                 ];
             }),
         ]);
@@ -196,10 +194,10 @@ class SupportRequestsController extends Controller
             'support_request' => [
                     'support_id' => $supportRequests->support_id,
                     'user_full_name' => $supportRequests->user ? $supportRequests->user->full_name : null,
+                    'user_email' => $supportRequests->user ? $supportRequests->user->email : null,
                     'subject' => $supportRequests->subject,
                     'description' => $supportRequests->description,
                     'status' => $supportRequests->status,
-                    'user_email' => $supportRequests->user ? $supportRequests->user->email : null,
                     'received_at' => $supportRequests->created_at,
                 ],
         ]);
