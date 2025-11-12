@@ -6,6 +6,7 @@ use App\Models\RefundRequest;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Nette\Schema\ValidationException;
 
 class RefundRequestsController extends Controller
@@ -22,7 +23,7 @@ class RefundRequestsController extends Controller
         }
 
         $already_exists = RefundRequest::where('transaction_id',$request->transaction_id);
-        if (!is_null($already_exists)) {
+        if (!is_null($already_exists) ) {
             return response() -> json(['errors' => ["Refund request for this transaction already exists!"]],409);
         }
 
@@ -66,6 +67,62 @@ class RefundRequestsController extends Controller
             'description' => $refund_request -> description,
             'status' => $refund_request -> status,
         ]);
+    }
+
+    public function viewAllRefundRequests(Request $request)
+    {
+        $user_role = $request->user()->role->role_name;
+        $valid_order = ['latest','oldest'];
+        $valid_statuses = ['pending', 'approved', 'rejected', 'completed'];
+
+        try{
+            $request->validate([
+                'status' => ['nullable',Rule::in($valid_statuses)],
+                'order_by' => ['nullable',Rule::in($valid_order)],
+            ]);
+        }catch(ValidationException $e){
+            return response() -> json(['errors' => $e->errors()]);
+        }
+
+        if($user_role !== "admin")
+        {
+            return response() -> json([
+                'message' => 'You do not have the required permissions!',
+            ]);
+        }
+
+        //Filtering methods
+        $query = RefundRequest::query();
+
+        if($request->filled('status') )
+        {
+            $query->where('status',$request->status);
+        }
+        if($request->filled('order_by') ){
+            $order_by_date = $request->order_by;
+            if($order_by_date === 'oldest')
+            {
+                $query->oldest();
+            }
+            else{
+                $query->latest();
+            }
+        }
+
+        $refund_requests = $query->with('transaction.senderWallet.user')->get();
+
+        return response() -> json(
+            $refund_requests->map(function($refund_request){
+                return[
+                'refund_id' => $refund_request ->refund_id,
+                'transaction_id' => $refund_request ->transaction_id,
+                'user_name' => $refund_request ->transaction->senderWallet->user->full_name ?? null,
+                'user_email' => $refund_request ->transaction->senderWallet->user->email ?? null,
+                'status' => $refund_request ->status,
+                'sent_at' => $refund_request ->created_at,
+                ];
+            })
+        );
     }
 }
 

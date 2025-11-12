@@ -21,4 +21,8 @@ Route::middleware(['jwt'])->prefix('/refund')->group(function () {
     Route::post('/request-create',[\App\Http\Controllers\RefundRequestsController::class,'create']);
     Route::get('/request-view/{id}',[\App\Http\Controllers\RefundRequestsController::class,'viewSingleRefundRequest']);
 
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/requests-view-all',[\App\Http\Controllers\RefundRequestsController::class,'viewAllRefundRequests']);
+    });
+
 });
