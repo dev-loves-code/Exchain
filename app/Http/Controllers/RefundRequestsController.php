@@ -71,7 +71,6 @@ class RefundRequestsController extends Controller
 
     public function viewAllRefundRequests(Request $request)
     {
-        $user_role = $request->user()->role->role_name;
         $valid_order = ['latest','oldest'];
         $valid_statuses = ['pending', 'approved', 'rejected', 'completed'];
 
@@ -81,8 +80,9 @@ class RefundRequestsController extends Controller
                 'order_by' => ['nullable',Rule::in($valid_order)],
             ]);
         }catch(ValidationException $e){
-            return response() -> json(['errors' => $e->errors()]);
+            return response() -> json(['errors' => $e->errors()],422);
         }
+        $user_role = $request->user()->role->role_name;
 
         if($user_role !== "admin")
         {
