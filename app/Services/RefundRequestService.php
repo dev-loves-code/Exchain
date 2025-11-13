@@ -11,8 +11,8 @@ use Nette\Schema\ValidationException;
 class RefundRequestService
 {
         public function approveRefundRequest($refund_id){
-                $refund_request = RefundRequest::findOrFail($refund_id);
 
+                $refund_request = RefundRequest::findOrFail($refund_id);
 
                 if ($refund_request->status !== 'pending') {
                     throw new Exception('Only pending refund requests can be accepted');
@@ -31,8 +31,6 @@ class RefundRequestService
                 $refund_request -> save();
 
                 return $refund_request;
-
-
         }
 
         public function rejectRefundRequest($refund_id, $reject_reason = null)
@@ -43,12 +41,10 @@ class RefundRequestService
                         throw new Exception('Only pending refund requests can be rejected');
                     }
 
-
                     $refund_request -> status = 'rejected';
                     $refund_request -> save();
 
                     return $refund_request;
-
         }
 
         public function completeRefundRequest($refund_id,$user_id){

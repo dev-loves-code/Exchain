@@ -51,7 +51,6 @@ class RefundRequestsController extends Controller
     }
 
     // Single Refund request
-
     public function viewSingleRefundRequest(Request $request,$id)
     {
         try {
@@ -83,6 +82,10 @@ class RefundRequestsController extends Controller
         }
     }
 
+    /**
+        * ViewAllRefundRequests Only for admin
+        * Filtering Ability based on both status, and date.
+     **/
     public function viewAllRefundRequests(Request $request)
     {
         $valid_order = ['latest','oldest'];
@@ -102,13 +105,13 @@ class RefundRequestsController extends Controller
         {
             return response() -> json([
                 'message' => 'You do not have the required permissions!',
-            ]);
+            ],401);
         }
 
         //Filtering methods
         $query = RefundRequest::query();
 
-        if($request->filled('status') )
+        if($request->filled('status'))
         {
             $query->where('status',$request->status);
         }
@@ -139,6 +142,10 @@ class RefundRequestsController extends Controller
         );
     }
 
+    /**
+     * Approve Refund
+     * business logic in services/RefundRequestService.php
+    **/
     public function approveRefund(Request $request, $id){
          try{
              if($request->user()->role->role_name !== "admin"){
@@ -160,6 +167,9 @@ class RefundRequestsController extends Controller
          }
     }
 
+    /**
+     * Reject A refund request as Admin Only
+    **/
     public function rejectRefund(Request $request,$id){
         try{
 
@@ -189,6 +199,9 @@ class RefundRequestsController extends Controller
         }
     }
 
+    /**
+     * Complete a refund after approval.
+    **/
     public function completeRefund(Request $request,$id){
 
         try{
@@ -207,6 +220,10 @@ class RefundRequestsController extends Controller
         }
     }
 
+    /**
+     * Cancel a refund request
+     * Only For Users
+    **/
     public function cancelRefund(Request $request,$id){
         try{
 
