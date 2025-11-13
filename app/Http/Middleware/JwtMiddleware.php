@@ -9,6 +9,7 @@ use App\Models\User;
 
 class JwtMiddleware
 {
+
     /**
      * Handle an incoming request.
      */
