@@ -20,7 +20,7 @@ class AgentProfileController extends Controller
      */
     public function getPersonalProfile(Request $request)
     {
-        $user = $request->user;
+        $user = $request->user();
 
         if ($user->role->role_name !== 'agent') {
             return response()->json([
@@ -69,7 +69,7 @@ class AgentProfileController extends Controller
      */
     public function updateProfile(Request $request)
     {
-        $user = $request->user;
+        $user = $request->user();
 
         if ($user->role->role_name !== 'agent') {
             return response()->json([
@@ -130,7 +130,7 @@ class AgentProfileController extends Controller
      */
     public function updateStatus(Request $request, $agentId)
     {
-        $user = $request->user;
+        $user = $request->user();
 
         if ($user->role->role_name !== 'admin') {
             return response()->json([
@@ -171,7 +171,7 @@ class AgentProfileController extends Controller
      */
     public function listAgents(Request $request)
     {
-        $user = $request->user;
+        $user = $request->user();
         
         // If user is admin, allow status filter, otherwise force 'accepted'
         $isAdmin = $user && $user->role->role_name === 'admin';
