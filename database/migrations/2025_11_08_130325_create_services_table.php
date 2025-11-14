@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id('service_id');
             $table->enum('service_type', ['transfer', 'payment', 'cash_out']);
             $table->enum('transfer_speed', ['instant', 'same_day', '1-3_days']);
-            $table->decimal('base_fee', 18, 2)->default(0);
+            // $table->decimal('base_fee', 18, 2)->default(0);
             $table->decimal('fee_percentage', 5, 2)->default(0);
             $table->timestamps();
         });
