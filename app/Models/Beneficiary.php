@@ -31,4 +31,8 @@ class Beneficiary extends Model
     public function bankAccount(): BelongsTo{
         return $this->belongsTo(BankAccount::class, 'bank_account_id', 'bank_account_id');
     }
+
+    public function paymentMethod(): BelongsTo{
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id', 'payment_method_id');
+    }
 }
