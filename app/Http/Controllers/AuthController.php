@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\AgentProfile;
+use App\Notifications\SignupNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -51,6 +52,19 @@ class AuthController extends Controller
         ]);
 
         $token = $this->generateToken($user);
+
+        // Notification Section
+        $data = [
+          'success' => true,
+            'title' => 'Welcome to Exchain',
+            'subtitle' => 'Your account has been created successfully!',
+            'cta_url' => url('/auth/login'),
+            'cta_text' => 'Login Now',
+
+        ];
+
+        $user->notify(new SignupNotification($data));
+        //End Notification Section
 
         return response()->json([
             'success' => true,
@@ -127,6 +141,33 @@ class AuthController extends Controller
             'commission_rate' => $request->commission_rate ?? 0,
             'status' => 'pending',
         ]);
+
+        // Notifications Area
+        $agentPayload = [
+            'subject' => 'Welcome to Exchain!',
+            'title' => 'Welcome!',
+            'subtitle' => 'Your agent account for '. $request->business_name.  '  is being processed.',
+            'message' => 'Once processed you can manage your services and profile.',
+            'cta_text' => 'Go to Dashboard',
+            'cta_url' => url('/auth/login'),
+        ];
+
+        $adminPayload = [
+            'subject' => 'New Agent Signed Up',
+            'title' => 'New Agent Alert',
+            'subtitle' => $user->full_name . ' registered as '. $request->business_name,
+            'message' => 'Agent Email: ' . $user->email . ' Please review their application.',
+            'cta_text' => 'View Agent',
+            'cta_url' => url('/admin/agents'), // make changes if changed
+        ];
+
+
+        $user->notify(new SignupNotification($agentPayload));
+        $admin = User::where('role_id',1)->firstOrFail();
+        $admin->notify(new SignupNotification($adminPayload));
+
+        //End Notification Area
+
 
         return response()->json([
             'success' => true,
