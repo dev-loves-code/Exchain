@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Services\CurrencyRateService;
-use Illuminate\Http\Request;
+use App\Services\WalletService;
 use App\Models\Wallet;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
@@ -14,13 +15,15 @@ use Illuminate\Support\Facades\Validator;
 class WalletController extends Controller
 {
     protected $currencyService;
+    protected $walletService;
     
-    public function __construct(CurrencyRateService $currencyService){
+    public function __construct(CurrencyRateService $currencyService, WalletService $walletService){
         $this->currencyService = $currencyService;
+        $this->walletService = $walletService;
     }
 
     /****USER SIDE****/
-    
+
     public function create(){
         //return view('');
     }
@@ -35,7 +38,6 @@ class WalletController extends Controller
         $validator = Validator::make($request->all(),[
             'currency_code' => 'required|string|size:3',
         ]);
-
         if($validator->fails()){
             return response()->json([
                 'success'=>false,
@@ -81,10 +83,7 @@ class WalletController extends Controller
     public function destroy(Request $request, $id){
         $user_id = $request->user()->user_id;
 
-        $wallet = Wallet::where('user_id', $user_id)
-                ->where('wallet_id', $id)
-                ->first();
-        
+        $wallet = $this->walletService->getUserWallet($user_id, $id);
         if(!$wallet){
             return response()->json([
                 'success' => false,
@@ -92,24 +91,12 @@ class WalletController extends Controller
             ], 404);
         }
 
-        if($wallet->currency_code != 'USD'){
-            $balance_in_usd = $this->currencyService->exchange($wallet->balance, $wallet->currency_code, 'USD');
-        } else {
-            $balance_in_usd = $wallet->balance;
-        }
-
-        if($balance_in_usd > 10){
+        //check if there a pending transactions for this wallet ->sprint2
+        if(!$this->walletService->canDeleteWallet($wallet)){
             return response()->json([
                 'success' =>false,
                 'message' => 'Cannot delete your wallet with balance more than $10.',
             ], 403);
-        }
-
-        if(!$request->boolean('confirm')){
-            return response()->json([
-                'success' => false,
-                'message' => 'Are you sure you want to delete this wallet?',//"confirm":true
-            ], 400);
         }
 
         $wallet->delete();
@@ -123,17 +110,14 @@ class WalletController extends Controller
     //get a specific wallet for a specific user
     public function show(Request $request, $id){
         $user_id = $request->user()->user_id;
-        $wallet = Wallet::where('user_id', $user_id)
-            ->where('wallet_id', $id)
-            ->select('wallet_id','balance','currency_code')                
-            ->first();
-        
+        $wallet = $this->walletService->getUserWallet($user_id, $id);
         if(!$wallet){
             return response()->json([
                 'success' => false,
                 'message' => 'Wallet not found',
             ]);
         }
+
         return response()->json([
             'success' => true,
             'data' => $wallet
