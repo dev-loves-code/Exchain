@@ -16,7 +16,7 @@ class BeneficiaryController extends Controller
                 'name' => 'required|string|max:150',
                 'email' => 'nullable|string|email|max:150',
                 'wallet_id' => 'nullable|string|exists:wallets,wallet_id',
-//                'bank_account' => 'nullable|string|exists:bank_accounts,bank_account_id',
+                'bank_account' => 'nullable|string|exists:bank_accounts,bank_account_id',
             ]);
         }catch(ValidationException $e){
             return response()->json(['errors'=> $e->errors()]);

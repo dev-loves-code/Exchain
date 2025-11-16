@@ -15,7 +15,7 @@ class Beneficiary extends Model
         'name',
         'email',
         'wallet_id',
-        'bank_account',
+        'bank_account_id',
     ];
 
     public function user(): BelongsTo
@@ -26,5 +26,9 @@ class Beneficiary extends Model
     public function wallet(): BelongsTo
     {
         return $this->belongsTo(Wallet::class, 'wallet_id', 'wallet_id');
+    }
+
+    public function bankAccount(): BelongsTo{
+        return $this->belongsTo(BankAccount::class, 'bank_account_id', 'bank_account_id');
     }
 }
