@@ -52,6 +52,9 @@ Route::middleware(['jwt'])->group(function () {
         Route::put('/ApproveTransaction/{id}', [TransactionController::class, 'approveWalletToWalletTransfer'])->name('approveTransfer');
         Route::put('/RejectTransaction/{id}', [TransactionController::class, 'rejectWalletToWalletTransfer'])->name('rejectTransfer');
         Route::get('/WalletToWalletHistory', [TransactionController::class, 'getWalletToWalletTransactions']);
+
+        // Wallet To person:
+        Route::post('/WalletToPerson', [TransactionController::class, 'initiateWalletToPersonTransfer'])->name('walletToPerson');
     });
 });
 

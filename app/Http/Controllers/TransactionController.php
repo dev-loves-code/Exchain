@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\WalletToPersonService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Wallet;
@@ -15,10 +17,11 @@ class TransactionController extends Controller
 {
     protected $currencyService;
     protected $walletToWalletService;
-
-    public function __construct(CurrencyRateService $currencyService, WalletToWalletService $walletToWalletService){
+    protected $walletToPersonService;
+    public function __construct(CurrencyRateService $currencyService, WalletToWalletService $walletToWalletService, WalletToPersonService $walletToPersonService){
         $this->currencyService = $currencyService;
         $this->walletToWalletService = $walletToWalletService;
+        $this->walletToPersonService = $walletToPersonService;
     }
 
     public function walletToWalletTransfer(Request $request){
@@ -63,12 +66,57 @@ class TransactionController extends Controller
 
     public function getWalletToWalletTransactions(Request $request){
         $user_id = $request->user()->user_id;
-        
-        $data = $this->walletToWalletService->getWalletTransactions($user_id, $request->wallet_id, $request->service_id);         
-        
+
+        $data = $this->walletToWalletService->getWalletTransactions($user_id, $request->wallet_id, $request->service_id);
+
         return response()->json([
             'success' => true,
             'data' => $data,
         ]);
     }
+
+    // Wallet To Person
+
+    public function initiateWalletToPersonTransfer(Request $request){
+
+        try {
+            $request->validate([
+                'sender_wallet_id' => 'required|integer',
+                'receiver_email' => 'required|string|email|max:255',
+                'transfer_amount' => 'required|numeric|min:5',
+                'currency_code' => 'required|string|size:3',
+                'include_fees' => 'required|boolean',
+            ]);
+        }catch(Exception $e){
+            return response()->json([
+                'success' => false,
+                'errors' => $e->getMessage(),
+            ], 422);
+        }
+
+
+        try{
+            $user_id = $request->user()->user_id;
+
+            $transaction = $this->walletToPersonService->initiateWalletToPersonTransfer(
+                $user_id,
+                $request->sender_wallet_id,
+                $request->receiver_email,
+                $request->transfer_amount,
+                $request->currency_code,
+                $request->include_fees);
+
+            // Add Notification here Priority 1 <---------------------------------------------------------------------
+
+            return $transaction;
+
+
+        }catch(Exception $e){
+            return response()->json([
+                'success' =>false,
+                'message' => $e->getMessage(),
+            ],  400);
+        }
+    }
+
 }
