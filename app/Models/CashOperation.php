@@ -16,6 +16,7 @@ class CashOperation extends Model
         'operation_type',
         'amount',
         'agent_commission',
+        'status',
     ];
 
     protected $casts = [

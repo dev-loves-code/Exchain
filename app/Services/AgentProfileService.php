@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\AgentProfile;
-use App\Models\User;
 
 class AgentProfileService
 {
@@ -14,7 +13,7 @@ class AgentProfileService
     {
         $profile = AgentProfile::with('agent')->where('agent_id', $agentId)->first();
 
-        if (!$profile) {
+        if (! $profile) {
             return null;
         }
 
@@ -28,7 +27,7 @@ class AgentProfileService
     {
         $profile = AgentProfile::where('agent_id', $agentId)->first();
 
-        if (!$profile) {
+        if (! $profile) {
             return null;
         }
 
@@ -45,7 +44,7 @@ class AgentProfileService
     {
         $profile = AgentProfile::where('agent_id', $agentId)->first();
 
-        if (!$profile) {
+        if (! $profile) {
             return null;
         }
 
@@ -68,12 +67,12 @@ class AgentProfileService
     {
         $query = AgentProfile::with('agent');
 
-        if (!empty($filters['city'])) {
-            $query->where('city', 'LIKE', '%' . $filters['city'] . '%');
+        if (! empty($filters['city'])) {
+            $query->where('city', 'LIKE', '%'.$filters['city'].'%');
         }
 
-        if (!empty($filters['name'])) {
-            $query->whereHas('agent', fn($q) => $q->where('full_name', 'LIKE', '%' . $filters['name'] . '%'));
+        if (! empty($filters['name'])) {
+            $query->whereHas('agent', fn ($q) => $q->where('full_name', 'LIKE', '%'.$filters['name'].'%'));
         }
 
         // Only apply status filter if provided
@@ -83,7 +82,7 @@ class AgentProfileService
 
         $agents = $query->get();
 
-        return $agents->map(fn($profile) => $this->formatProfileData($profile));
+        return $agents->map(fn ($profile) => $this->formatProfileData($profile));
     }
 
     /**

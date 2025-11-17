@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Notification extends Model
 {
     protected $primaryKey = 'notification_id';
+
     const UPDATED_AT = null;
 
     protected $fillable = [

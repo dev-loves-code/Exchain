@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
-use Illuminate\Http\Request;
 use App\Http\Controllers\AuthController;
 use App\Models\User;
+use Closure;
+use Illuminate\Http\Request;
 
 class JwtMiddleware
 {
@@ -16,19 +16,19 @@ class JwtMiddleware
     {
         $token = $request->bearerToken();
 
-        if (!$token) {
+        if (! $token) {
             return response()->json([
                 'success' => false,
-                'message' => 'Token not provided'
+                'message' => 'Token not provided',
             ], 401);
         }
 
         $decoded = AuthController::decodeToken($token);
 
-        if (!$decoded) {
+        if (! $decoded) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid or expired token'
+                'message' => 'Invalid or expired token',
             ], 401);
         }
 
@@ -36,17 +36,17 @@ class JwtMiddleware
         if ($decoded->exp < time()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Token expired'
+                'message' => 'Token expired',
             ], 401);
         }
 
         // Attach user to request
         $user = User::with('role')->find($decoded->sub);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
-                'message' => 'User not found'
+                'message' => 'User not found',
             ], 401);
         }
 

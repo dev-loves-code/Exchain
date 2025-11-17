@@ -25,22 +25,22 @@ class AgentProfileController extends Controller
         if ($user->role->role_name !== 'agent') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only agents can access their profile'
+                'message' => 'Only agents can access their profile',
             ], 403);
         }
 
         $profile = $this->agentProfileService->getProfileById($user->user_id);
 
-        if (!$profile) {
+        if (! $profile) {
             return response()->json([
                 'success' => false,
-                'message' => 'Profile not found'
+                'message' => 'Profile not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $profile
+            'data' => $profile,
         ], 200);
     }
 
@@ -51,16 +51,16 @@ class AgentProfileController extends Controller
     {
         $profile = $this->agentProfileService->getProfileById($agentId);
 
-        if (!$profile) {
+        if (! $profile) {
             return response()->json([
                 'success' => false,
-                'message' => 'Profile not found'
+                'message' => 'Profile not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $profile
+            'data' => $profile,
         ], 200);
     }
 
@@ -74,7 +74,7 @@ class AgentProfileController extends Controller
         if ($user->role->role_name !== 'agent') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only agents can update their profile'
+                'message' => 'Only agents can update their profile',
             ], 403);
         }
 
@@ -93,7 +93,7 @@ class AgentProfileController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -111,17 +111,17 @@ class AgentProfileController extends Controller
 
         $profile = $this->agentProfileService->updateProfile($user->user_id, $updateData);
 
-        if (!$profile) {
+        if (! $profile) {
             return response()->json([
                 'success' => false,
-                'message' => 'Profile not found'
+                'message' => 'Profile not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Profile updated',
-            'data' => $profile
+            'data' => $profile,
         ], 200);
     }
 
@@ -135,7 +135,7 @@ class AgentProfileController extends Controller
         if ($user->role->role_name !== 'admin') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only admins can update agent status'
+                'message' => 'Only admins can update agent status',
             ], 403);
         }
 
@@ -146,23 +146,23 @@ class AgentProfileController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         $profile = $this->agentProfileService->updateStatus($agentId, $request->status);
 
-        if (!$profile) {
+        if (! $profile) {
             return response()->json([
                 'success' => false,
-                'message' => 'Profile not found'
+                'message' => 'Profile not found',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
             'message' => "Profile {$request->status}",
-            'data' => $profile
+            'data' => $profile,
         ], 200);
     }
 
@@ -172,22 +172,30 @@ class AgentProfileController extends Controller
     public function listAgents(Request $request)
     {
         $user = $request->user();
-        
-        // If user is admin, allow status filter, otherwise force 'accepted'
+
         $isAdmin = $user && $user->role->role_name === 'admin';
-        
+
         $filters = [
             'city' => $request->input('city'),
             'name' => $request->input('name'),
-            'status' => $isAdmin ? $request->input('status') : 'accepted',
         ];
+
+        if ($isAdmin) {
+            $status = $request->input('status');
+            if ($status) {
+                $filters['status'] = $status;
+            }
+
+        } else {
+            $filters['status'] = 'accepted';
+        }
 
         $agents = $this->agentProfileService->listAgents($filters);
 
         return response()->json([
             'success' => true,
             'data' => $agents,
-            'count' => $agents->count()
+            'count' => $agents->count(),
         ], 200);
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Review extends Model
 {
     protected $primaryKey = 'review_id';
+
     const UPDATED_AT = null;
 
     protected $fillable = [

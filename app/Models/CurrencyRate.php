@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class CurrencyRate extends Model
 {
     protected $primaryKey = 'rate_id';
+
     const UPDATED_AT = null;
 
     protected $fillable = [

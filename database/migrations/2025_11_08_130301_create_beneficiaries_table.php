@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('wallet_id')->nullable();
             $table->string('bank_account', 100)->nullable();
             $table->timestamp('created_at')->useCurrent();
-            
+
             $table->foreign('wallet_id')->references('wallet_id')->on('wallets')->onDelete('set null');
         });
     }

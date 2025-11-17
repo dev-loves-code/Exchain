@@ -10,8 +10,6 @@ class RoleMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @param  string  ...$roles
      * @return mixed
      */
@@ -19,22 +17,22 @@ class RoleMiddleware
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized'
+                'message' => 'Unauthorized',
             ], 401);
         }
 
         // Check if user has any of the required roles
         $userRole = $user->role->role_name;
 
-        if (!in_array($userRole, $roles)) {
+        if (! in_array($userRole, $roles)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Forbidden - Insufficient permissions',
                 'required_roles' => $roles,
-                'your_role' => $userRole
+                'your_role' => $userRole,
             ], 403);
         }
 

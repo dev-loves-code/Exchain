@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PaymentMethod extends Model
 {
     protected $primaryKey = 'payment_method_id';
+
     const UPDATED_AT = null;
 
     protected $fillable = [
