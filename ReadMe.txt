@@ -1,10 +1,11 @@
 .env requirement:
 
+
 MAIL_MAILER=smtp
+MAIL_ENCRYPTION=tls
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_app_password
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS="noreply@yourapp.com"
-MAIL_FROM_NAME="Your App"
+MAIL_USERNAME=bahijghazal1@gmail.com
+MAIL_PASSWORD=pbxqmzumiruioxzg
+MAIL_FROM_ADDRESS=bahijghazal1@gmail.com
+MAIL_FROM_NAME="Exchain"
