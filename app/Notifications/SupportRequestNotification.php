@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class WalletToPerson extends Notification
+class SupportRequestNotification extends Notification
 {
     use Queueable;
 
@@ -36,7 +36,7 @@ class WalletToPerson extends Notification
     {
         return (new MailMessage)
             ->subject($this->payload['subject'] ?? 'Notification')
-            ->markdown('emails.wallet_to_person',[
+            ->markdown('emails.support_request',[
                 'payload' => $this->payload,
                 'user' => $notifiable
             ]);

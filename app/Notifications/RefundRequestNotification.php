@@ -36,7 +36,7 @@ class RefundRequestNotification extends Notification
     {
         return (new MailMessage)
             ->subject($this->payload['subject'] ?? 'Notification')
-            ->markdown('emails.user_signup',[
+            ->markdown('emails.user_refund',[
                 'payload' => $this->payload,
                 'user' => $notifiable
             ]);

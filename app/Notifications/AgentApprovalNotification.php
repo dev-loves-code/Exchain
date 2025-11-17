@@ -36,7 +36,7 @@ class AgentApprovalNotification extends Notification
     {
         return (new MailMessage)
             ->subject($this->payload['subject'] ?? 'Notification')
-            ->markdown('emails.user_signup',[
+            ->markdown('emails.agent_approval',[
                 'payload' => $this->payload,
                 'user' => $notifiable
             ]);
