@@ -54,7 +54,15 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('/WalletToWalletHistory', [TransactionController::class, 'getWalletToWalletTransactions']);
 
         // Wallet To person:
-        Route::post('/WalletToPerson', [TransactionController::class, 'initiateWalletToPersonTransfer'])->name('walletToPerson');
+        // User
+        Route::post('/initiate-wallet-to-person', [TransactionController::class, 'initiateWalletToPersonTransfer'])->name('walletToPerson');
+        Route::get('receipt/{id}',[TransactionController::class, 'getReceipt']);
+        Route::get('transactions-history-w2p',[TransactionController::class, 'getTransactions']);
+
+        Route::prefix('agent/wallet-to-person')->group(function () {
+            Route::post('verify',[TransactionController::class, 'verifyTransactionAgent']);
+            Route::post('complete',[TransactionController::class, 'completeTransactionAgent']);
+        });
     });
 });
 

@@ -108,7 +108,11 @@ class TransactionController extends Controller
 
             // Add Notification here Priority 1 <---------------------------------------------------------------------
 
-            return $transaction;
+            return response() -> json([
+                'success' => true,
+                'message' => 'Transfer initiated successfully.',
+                'data' => $transaction,
+            ]);
 
 
         }catch(Exception $e){
@@ -116,6 +120,64 @@ class TransactionController extends Controller
                 'success' =>false,
                 'message' => $e->getMessage(),
             ],  400);
+        }
+    }
+
+    // Get single receipt of transaction
+    public function getReceipt(Request $request, $transaction_id){
+        try{
+            return $this->walletToPersonService->getReceipt($transaction_id, $request->user()->user_id);
+        }catch(Exception $e){
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ],403);
+        }
+    }
+
+    public function getTransactions(Request $request){
+        $wallet_id = $request->query('wallet_id');
+
+        return $this->walletToPersonService->getUserWalletToPersonTransactions(
+          request()->user()->user_id,
+          $wallet_id
+        );
+    }
+
+    // Admin Wallet to person
+
+    public function verifyTransactionAgent(Request $request){
+        try{
+            $request->validate([
+                'reference_code' => 'required|string',
+            ]);
+        }catch(Exception $e){
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        return $this->walletToPersonService->verifyTransaction(
+            $request->reference_code,
+        );
+    }
+
+    public function completeTransactionAgent(Request $request){
+        try {
+            $request->validate([
+                'transaction_id' => 'required|integer',
+            ]);
+
+            return $this->walletToPersonService->completeWalletToPersonTransactions(
+                $request->transaction_id,
+                $request->user()->user_id
+            );
+        }catch(Exception $e){
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ]);
         }
     }
 
