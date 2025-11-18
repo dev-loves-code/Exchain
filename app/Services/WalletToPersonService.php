@@ -27,20 +27,19 @@ class WalletToPersonService
         DB::beginTransaction();
 
         try {
-            // 1. Get Sender Wallet
             $sender_wallet = $this->walletService->getUserWallet($user_id, $sender_wallet_id);
 
             if (!$sender_wallet) {
                 throw new Exception('Sender wallet not found');
             }
 
-            // 2. Get Service
             $service = Service::where('service_type', 'cash_out')->firstOrFail();
 
             $requested_currency = strtoupper($currency);
             $requested_amount   = $amount;
 
-            // 3. Handle currency conversion
+
+
             if ($sender_wallet->currency_code !== $requested_currency) {
 
                 $exchange = $this->currencyService->exchange(
@@ -53,50 +52,50 @@ class WalletToPersonService
                     throw new Exception('Exchange service returned invalid response.');
                 }
 
-                $exchanged_amount = $exchange['total'];
-                $exchange_rate    = $exchange['exchange_rate'];
+                $receiver_amount = $exchange['total'];
+                $exchange_rate   = $exchange['exchange_rate'];
 
             } else {
-                // No exchange needed
-                $exchanged_amount = $requested_amount;
-                $exchange_rate    = 1;
+                $receiver_amount = $requested_amount;
+                $exchange_rate   = 1;
             }
 
-            // 4. Calculate fees (fee_percentage is decimal e.g. 0.05 = 5%)
-            $fees = $service->fee_percentage * $exchanged_amount;
+           // Fees Calculation for sender
+            $fees_sender = $service->fee_percentage * $requested_amount;
 
-            // 5. Fee handling logic
+
             if ($include_fees) {
-                // Sender pays the fee
-                $total_amount         = $exchanged_amount + $fees;
-                $total_received_amount = $exchanged_amount;
+                $total_deduction = $requested_amount + $fees_sender;
+                $received_amount = $receiver_amount;
+
             } else {
-                // Receiver pays the fee
-                $total_amount         = $exchanged_amount;
-                $total_received_amount = $exchanged_amount - $fees;
+                $total_deduction = $requested_amount;
+
+                $fees_receiver = $fees_sender * $exchange_rate;
+
+                $received_amount = $receiver_amount - $fees_receiver;
             }
 
-            if ($total_received_amount < 0) {
+            if ($received_amount < 0) {
                 throw new Exception('Received amount cannot be negative.');
             }
 
-            // 6. Balance check
-            if ($sender_wallet->balance < $total_amount) {
+
+            if ($sender_wallet->balance < $total_deduction) {
                 throw new Exception('Insufficient balance');
             }
 
-            // Deduct balance
-            $sender_wallet->balance -= $total_amount;
+            $sender_wallet->balance -= $total_deduction;
             $sender_wallet->save();
 
-            // 7. Create transaction
+
             $transaction = Transaction::create([
                 'sender_wallet_id' => $sender_wallet->wallet_id,
                 'receiver_email'   => $receiver_email,
                 'service_id'       => $service->service_id,
-                'transfer_amount'  => $requested_amount,      // original amount
-                'transfer_fee'     => $fees,
-                'received_amount'  => $total_received_amount,
+                'transfer_amount'  => $requested_amount,
+                'transfer_fee'     => $fees_sender,
+                'received_amount'  => $received_amount,   
                 'exchange_rate'    => $exchange_rate,
                 'status'           => 'pending'
             ]);
@@ -109,6 +108,7 @@ class WalletToPersonService
             throw $e;
         }
     }
+
 
     private function generateReferenceCode($transaction_id)
     {

@@ -59,7 +59,9 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('receipt/{id}',[TransactionController::class, 'getReceipt']);
         Route::get('transactions-history-w2p',[TransactionController::class, 'getTransactions']);
 
-        Route::prefix('agent/wallet-to-person')->group(function () {
+        Route::prefix('agent/wallet-to-person')
+            ->middleware(['role:agent'])
+            ->group(function () {
             Route::post('verify',[TransactionController::class, 'verifyTransactionAgent']);
             Route::post('complete',[TransactionController::class, 'completeTransactionAgent']);
         });
