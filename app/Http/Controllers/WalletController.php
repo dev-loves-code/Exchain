@@ -91,14 +91,15 @@ class WalletController extends Controller
             ], 404);
         }
 
-        //check if there a pending transactions for this wallet ->sprint2
-        if(!$this->walletService->canDeleteWallet($wallet)){
+        $check = $this->walletService->canDeleteWallet($wallet);
+
+        if($check !== true){
             return response()->json([
-                'success' =>false,
-                'message' => 'Cannot delete your wallet with balance more than $10.',
+                'success' => false,
+                'message' => 'Cannot delete wallet! ' . $check,
             ], 403);
         }
-
+        
         $wallet->delete();
 
         return response()->json([

@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Wallet;
+use App\Models\Transaction;
 use App\Services\CurrencyRateService;
+use Illuminate\Database\Eloquent\Builder;
 
 class WalletService
 {
@@ -21,15 +23,29 @@ class WalletService
     }
 
     public function canDeleteWallet($wallet){
+        
+        //1-check if balance > 10 $
         if($wallet->currency_code != 'USD'){
             $balance_in_usd = $this->currencyService->exchange($wallet->balance, $wallet->currency_code, 'USD');
         } else {
             $balance_in_usd = $wallet->balance;
         }
 
-        return $balance_in_usd <= 10;
+        if( $balance_in_usd > 10){
+            return 'Balance is greater than 10 $';
+        }
 
-        //check if there a pending transactions for this wallet ->sprint2
+        //2-check if has transactions
+        if($this->hasPendingTransactions($wallet->wallet_id)){
+            return 'Wallet has transactions';
+        }
+
+        return true;
     }
 
+    public function hasPendingTransactions($wallet_id){
+        return Transaction::where('sender_wallet_id', $wallet_id)
+            ->orWhere('receiver_wallet_id', $wallet_id)            
+            ->exists();
+    }
 }
