@@ -4,8 +4,11 @@ use App\Http\Controllers\AgentProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CashOperationController;
 use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ServiceController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 // Google Auth routes
@@ -19,8 +22,17 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+Route::post('/broadcasting/auth', function (Request $request) {
+    return Broadcast::auth($request);
+})->middleware(['jwt']);
+
 // Routes requiring JWT auth
 Route::middleware(['jwt'])->group(function () {
+
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::patch('/{notificationId}/read', [NotificationController::class, 'markAsRead']);
+    });
 
     Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);

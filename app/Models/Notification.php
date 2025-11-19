@@ -20,6 +20,7 @@ class Notification extends Model
 
     protected $casts = [
         'is_read' => 'boolean',
+        'notification_id' => 'integer',
     ];
 
     public function user(): BelongsTo
