@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AgentCommissionW2P;
+use App\Models\RefundRequest;
 use App\Models\Service;
 use App\Models\Transaction;
 use Exception;
@@ -318,6 +319,14 @@ class WalletToPersonService
 
             if($transaction->status !== 'pending'){
                 throw new Exception('This Receipt has already been processed');
+            }
+
+            $refund_request = RefundRequest::where('transaction_id',$transaction_id)
+                ->where('status','pending')
+                ->first();
+
+            if($refund_request){
+                throw new Exception('A refund request on this transaction is taking place. Cannot refund right now.');
             }
 
             $transaction->status = 'done';
