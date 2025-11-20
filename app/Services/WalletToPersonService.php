@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AgentCommissionW2P;
 use App\Models\Service;
 use App\Models\Transaction;
 use Exception;
@@ -95,7 +96,7 @@ class WalletToPersonService
                 'service_id'       => $service->service_id,
                 'transfer_amount'  => $requested_amount,
                 'transfer_fee'     => $fees_sender,
-                'received_amount'  => $received_amount,   
+                'received_amount'  => $received_amount,
                 'exchange_rate'    => $exchange_rate,
                 'status'           => 'pending'
             ]);
@@ -276,6 +277,14 @@ class WalletToPersonService
         if ($agent_wallet && $agent_profile && $agent_profile->commission_rate > 0) {
             $commission = $transaction->transfer_fee * $agent_profile->commission_rate;
 
+            AgentCommissionW2P::create([
+                'transaction_id' => $transaction->transaction_id,
+                'agent_id' => $agent_id,
+                'commission_amount' => $commission,
+                'commission_rate' => $agent_profile->commission_rate,
+                'created_at' => now(),
+            ]);
+
             DB::table('wallets')
                 ->where('wallet_id', $agent_wallet->wallet_id)
                 ->increment('balance', $commission);
@@ -283,6 +292,7 @@ class WalletToPersonService
 
         }
     }
+
 
     public function completeWalletToPersonTransactions($transaction_id, $agent_id){
         DB::beginTransaction();
