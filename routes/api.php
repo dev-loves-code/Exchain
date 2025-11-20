@@ -60,3 +60,5 @@ Route::middleware(['jwt', 'role:admin'])->group(function () {
         Route::patch('/agents/{agentId}/status', [AgentProfileController::class, 'updateStatus']);
     });
 });
+
+

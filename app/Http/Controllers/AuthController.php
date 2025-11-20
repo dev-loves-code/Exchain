@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\AgentProfile;
 use App\Notifications\SignupNotification;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -54,6 +55,7 @@ class AuthController extends Controller
         $token = $this->generateToken($user);
 
         // Notification Section
+        $emailService = app(EmailService::class);
         $data = [
           'success' => true,
             'title' => 'Welcome to Exchain',
@@ -63,7 +65,8 @@ class AuthController extends Controller
 
         ];
 
-        $user->notify(new SignupNotification($data));
+        $emailService->sendUserSignup($user, $data);
+
         //End Notification Section
 
         return response()->json([
@@ -143,6 +146,9 @@ class AuthController extends Controller
         ]);
 
         // Notifications Area
+
+        $emailService = app(EmailService::class);
+
         $agentPayload = [
             'subject' => 'Welcome to Exchain!',
             'title' => 'Welcome!',
@@ -162,9 +168,10 @@ class AuthController extends Controller
         ];
 
 
-        $user->notify(new SignupNotification($agentPayload));
+        $emailService->sendAgentSignup($user, $agentPayload);
         $admin = User::where('role_id',1)->firstOrFail();
-        $admin->notify(new SignupNotification($adminPayload));
+        $emailService->sendAgentSignup($admin, $adminPayload);
+
 
         //End Notification Area
 
