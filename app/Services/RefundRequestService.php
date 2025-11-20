@@ -53,7 +53,9 @@ class RefundRequestService
 
                 $transaction = Transaction::findOrFail($refund_request -> transaction_id);
 
-                if($transaction -> sender_wallet_id !== $user_id){
+                $wallet = Wallet::findOrFail($transaction->sender_wallet_id);
+
+                if($wallet->user_id !== $user_id){
                     throw new Exception('You can only complete refund requests of your own');
                 }
 
@@ -61,6 +63,9 @@ class RefundRequestService
                     throw new Exception('Only approved refund requests can be completed');
                 }
                 $refund_request -> status = 'completed';
+                $transaction->status = 'refunded';
+                $transaction->save();
+
                 $refund_request -> save();
 
                 return $refund_request;
