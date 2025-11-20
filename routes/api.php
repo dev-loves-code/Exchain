@@ -20,12 +20,11 @@ Route::middleware(['jwt'])->group(function () {
 Route::middleware(['jwt'])->prefix('/refund')->group(function () {
     Route::post('/request-create',[\App\Http\Controllers\RefundRequestsController::class,'create']);
     Route::get('/request-view/{id}',[\App\Http\Controllers\RefundRequestsController::class,'viewSingleRefundRequest']);
-    Route::put('/request-complete/{id}',[\App\Http\Controllers\RefundRequestsController::class,'completeRefund']);
     Route::put('/request-cancel/{id}',[\App\Http\Controllers\RefundRequestsController::class,'cancelRefund']);
 
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/requests-view-all',[\App\Http\Controllers\RefundRequestsController::class,'viewAllRefundRequests']);
-        Route::put('/request-approve/{id}',[\App\Http\Controllers\RefundRequestsController::class,'approveRefund']);
+        Route::put('/request-complete/{id}',[\App\Http\Controllers\RefundRequestsController::class,'completeRefund']);
         Route::put('/request-reject/{id}',[\App\Http\Controllers\RefundRequestsController::class,'rejectRefund']);
     });
 

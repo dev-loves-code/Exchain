@@ -92,4 +92,26 @@ class RefundRequestService
                 return true;
         }
 
+        public function processRefund($refund_id){
+            $refund_request = RefundRequest::findOrFail($refund_id);
+
+            if ($refund_request->status !== 'pending') {
+                throw new Exception('Only pending refund requests can be processed');
+            }
+
+            $transaction = Transaction::findOrFail($refund_request -> transaction_id);
+
+            $wallet = Wallet::findOrFail($transaction -> sender_wallet_id);
+
+            $wallet->balance += $transaction -> transfer_amount;
+            $wallet->save();
+
+            $refund_request->status = 'completed';
+            $transaction->status = 'refunded';
+            $transaction -> save();
+            $refund_request -> save();
+
+            return $refund_request;
+        }
+
 }

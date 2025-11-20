@@ -142,30 +142,7 @@ class RefundRequestsController extends Controller
         );
     }
 
-    /**
-     * Approve Refund
-     * business logic in services/RefundRequestService.php
-    **/
-    public function approveRefund(Request $request, $id){
-         try{
-             if($request->user()->role->role_name !== "admin"){
-                 return response() -> json([
-                     'message' => 'You do not have permission to approve refund requests!',
-                 ],401);
-             }
 
-              $refundRequest = $this->refundRequestService->approveRefundRequest($id);
-
-             return response() -> json([
-                 'success' => true,
-                 'message' => 'Refund request approved',
-                 'data' => $refundRequest,
-             ],200);
-
-         }catch(Exception $e){
-             return response() -> json(['errors' => $e->getMessage()],400);
-         }
-    }
 
     /**
      * Reject A refund request as Admin Only
@@ -205,9 +182,8 @@ class RefundRequestsController extends Controller
     public function completeRefund(Request $request,$id){
 
         try{
-            $user_id = $request->user()->user_id;
 
-            $refundRequest = $this->refundRequestService->completeRefundRequest($id,$user_id);
+            $refundRequest = $this->refundRequestService->processRefund($id);
 
             return response() -> json([
                 'success' => true,
