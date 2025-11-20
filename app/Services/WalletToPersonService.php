@@ -275,7 +275,23 @@ class WalletToPersonService
             ->first();
 
         if ($agent_wallet && $agent_profile && $agent_profile->commission_rate > 0) {
-            $commission = $transaction->transfer_fee * $agent_profile->commission_rate;
+            $commission_in_txn_currency = $transaction->transfer_fee * $agent_profile->commission_rate;
+
+            if ($agent_wallet->currency_code !== $transaction->senderWallet->currency_code) {
+                $exchange = $this->currencyService->exchange(
+                    $commission_in_txn_currency,
+                    $transaction->senderWallet->currency_code,
+                    $agent_wallet->currency_code
+                );
+
+                if (!isset($exchange['total'])) {
+                    throw new Exception('Currency conversion failed for agent commission.');
+                }
+
+                $commission = $exchange['total'];
+            } else {
+                $commission = $commission_in_txn_currency;
+            }
 
             AgentCommissionW2P::create([
                 'transaction_id' => $transaction->transaction_id,
