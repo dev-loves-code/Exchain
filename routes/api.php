@@ -6,12 +6,15 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\AgentProfileController;
+use App\Http\Controllers\PaymentController;
+
 
 // Google Auth routes
 Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 
-// Auth routes
+// Auth routesuse App\Http\Controllers\PaymentController;
+
 Route::prefix('auth')->group(function () {
     Route::post('/register/user', [AuthController::class, 'registerUser']);
     Route::post('/register/agent', [AuthController::class, 'registerAgent']);
@@ -59,4 +62,13 @@ Route::middleware(['jwt', 'role:admin'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::patch('/agents/{agentId}/status', [AgentProfileController::class, 'updateStatus']);
     });
+});
+
+Route::middleware(['jwt'])->prefix('payments')->group(function () {
+
+    Route::post('/recharge-wallet', [PaymentController::class, 'rechargeWallet']);
+    
+    Route::get('/wallet-balance', [PaymentController::class, 'getWalletBalance']);
+    Route::get('/payment-methods', [PaymentController::class, 'listPaymentMethods']);
+
 });
