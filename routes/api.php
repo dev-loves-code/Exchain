@@ -31,7 +31,7 @@ Route::middleware(['jwt'])->group(function(){
         /****USER SIDE****/
         Route::post('/', [WalletController::class, 'store']);
         Route::get('/', [WalletController::class, 'getAllWallets']);
-        Route::delete('/{id}', [WalletController::class, 'destroy']);
+        Route::patch('/{id}', [WalletController::class, 'destroy']);
         Route::get('/{id}', [WalletController::class, 'show']);
     });
 });

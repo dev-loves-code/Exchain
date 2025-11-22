@@ -16,6 +16,7 @@ class WalletService
 
     public function getUserWallet($user_id, $wallet_id){
         $wallet = Wallet::where('user_id', $user_id)
+            ->where('is_active', true)
             ->where('wallet_id', $wallet_id)
             ->first();
 
@@ -37,15 +38,18 @@ class WalletService
 
         //2-check if has transactions
         if($this->hasPendingTransactions($wallet->wallet_id)){
-            return 'Wallet has transactions';
+            return 'Wallet has pending transactions';
         }
 
         return true;
     }
 
     public function hasPendingTransactions($wallet_id){
-        return Transaction::where('sender_wallet_id', $wallet_id)
-            ->orWhere('receiver_wallet_id', $wallet_id)            
+       return Transaction::where('status', 'pending')
+            ->where(function (Builder $query) use ($wallet_id){
+                $query->Where('sender_wallet_id', $wallet_id)
+                    ->orWhere('receiver_wallet_id', $wallet_id);
+            })           
             ->exists();
     }
 }

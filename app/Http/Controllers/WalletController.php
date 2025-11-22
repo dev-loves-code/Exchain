@@ -63,13 +63,14 @@ class WalletController extends Controller
         $user_id = $request->user()->user_id;
         
         $wallets = Wallet::where('user_id', $user_id)
+        ->where('is_active', true)
         ->select('wallet_id','balance','currency_code')                
         ->get();
 
         if($wallets->isEmpty()){
             return response()->json([
                 'success' => false,
-                'message' => 'No wallets found for this user'
+                'message' => 'No wallets found!'
             ]);
         }
 
@@ -100,7 +101,9 @@ class WalletController extends Controller
             ], 403);
         }
         
-        $wallet->delete();
+        //mark wallet as inactive
+        $wallet->is_active = false;
+        $wallet->save();
 
         return response()->json([
             'success' => true,
@@ -137,6 +140,7 @@ class WalletController extends Controller
                     'user_full_name' => $wallet->user->full_name ,
                     'user_email' =>  $wallet->user->email,
                     'balance' => $wallet->balance,
+                    'is_active' => $wallet->is_active ? 'Yes' : 'No',                 
                     'currency_code' => $wallet->currency_code,
                     'created_at' => $wallet->created_at,
                 ];
@@ -160,6 +164,7 @@ class WalletController extends Controller
                     'user_email' =>  $wallet->user->email,
                     'wallet_id' => $wallet->wallet_id,                    
                     'balance' => $wallet->balance,
+                    'is_active' => $wallet->is_active ? 'Yes' : 'No',                 
                     'currency_code' => $wallet->currency_code,
                     'created_at' => $wallet->created_at,
                 ];
