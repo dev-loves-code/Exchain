@@ -12,6 +12,7 @@ use Nette\Schema\ValidationException;
 
 class BeneficiaryController extends Controller
 {
+    // Show all beneficiaries + filter
     public function index(Request $request){
         $user_id = $request->user()->user_id;
         $data = Beneficiary::with(['paymentMethod','bankAccount','wallet'])
@@ -98,6 +99,7 @@ class BeneficiaryController extends Controller
         ],201);
     }
 
+    // SHow single beneficiaries
     public function show(Request $request, $id){
         $user_id = $request->user()->user_id;
 
@@ -112,6 +114,7 @@ class BeneficiaryController extends Controller
         ],200);
     }
 
+    // Delete beneficiaries
     public function destroy(Request $request, $id){
         $user_id  = $request->user()->user_id;
         $beneficiary = Beneficiary::where('beneficiary_id', $id)
@@ -124,6 +127,7 @@ class BeneficiaryController extends Controller
         ],200);
     }
 
+    // Update a beneficiary
     public function update(Request $request, $id){
         $user_id = $request->user()->user_id;
 
@@ -147,13 +151,14 @@ class BeneficiaryController extends Controller
             ],422);
         }
 
+        // Fill only allowed attributes
         $beneficiary->fill($request->only(['name','email','payment_method_id','bank_account_id','wallet_id']));
 
         $beneficiary->save();
 
         return response()->json([
             'success' => true,
-            'beneficiary' => $beneficiary->fresh()
+            'beneficiary' => $beneficiary->fresh() // Reload the model from db (return latest changes)
         ],200);
     }
 }

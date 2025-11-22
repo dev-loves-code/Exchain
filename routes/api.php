@@ -15,7 +15,7 @@ use App\Http\Controllers\PaymentController;
 Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
 Route::get('auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
 
-// Auth routesuse App\Http\Controllers\PaymentController;
+// Auth routes use App\Http\Controllers\PaymentController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register/user', [AuthController::class, 'registerUser']);
@@ -74,6 +74,8 @@ Route::middleware(['jwt'])->prefix('payments')->group(function () {
     Route::get('/payment-methods', [PaymentController::class, 'listPaymentMethods']);
 
 });
+
+// Beneficiaries Routes
 
 Route::middleware(['jwt'])->prefix('beneficiaries') -> group(function () {
     Route::get('/', [BeneficiaryController::class, 'index']);
