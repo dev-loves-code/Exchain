@@ -26,8 +26,8 @@ class TransactionController extends Controller
 
         //validate the input
         $validator = Validator::make($request->all(),[
-            'sender_wallet_id' => 'required|integer',
-            'receiver_wallet_id' => 'required|integer|different:sender_wallet_id|exists:wallets,wallet_id|min:1',
+            'sender_wallet_id' => 'required|integer|exists:wallets,wallet_id,is_active,1',
+            'receiver_wallet_id' => 'required|integer|different:sender_wallet_id|exists:wallets,wallet_id,is_active,1|min:1',
             'amount' => 'required|numeric|min:0.01', //amount the receiver wants
             'currency_code' => 'required|string|size:3', //currency selected by the sender
         ]);
@@ -64,7 +64,7 @@ class TransactionController extends Controller
     public function getWalletToWalletTransactions(Request $request){
         $user_id = $request->user()->user_id;
         
-        $data = $this->walletToWalletService->getWalletTransactions($user_id, $request->wallet_id, $request->service_id);         
+        $data = $this->walletToWalletService->getWalletTransactions($user_id, $request->wallet_id, 1);         
         
         return response()->json([
             'success' => true,
