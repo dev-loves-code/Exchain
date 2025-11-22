@@ -7,6 +7,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\AgentProfileController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\WalletController;
 
 // Google Auth routes
 Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
@@ -68,5 +69,22 @@ Route::middleware(['jwt'])->group(function () {
         Route::put('/ApproveTransaction/{id}', [TransactionController::class, 'approveWalletToWalletTransfer'])->name('approveTransfer');
         Route::put('/RejectTransaction/{id}', [TransactionController::class, 'rejectWalletToWalletTransfer'])->name('rejectTransfer');
         Route::get('/WalletToWalletHistory', [TransactionController::class, 'getWalletToWalletTransactions']);
+    });
+});
+
+Route::middleware(['jwt'])->group(function(){
+    Route::prefix('wallets')->group(function(){
+       
+        /****ADMIN SIDE****/
+       Route::middleware(['role:admin'])->group(function(){
+            Route::get('/admin', [WalletController::class, 'adminGetAllWallets']);
+            Route::get('/admin/{user_id}', [WalletController::class, 'adminUserWallets']);
+       }); 
+
+        /****USER SIDE****/
+        Route::post('/', [WalletController::class, 'store']);
+        Route::get('/', [WalletController::class, 'getAllWallets']);
+        Route::patch('/{id}', [WalletController::class, 'destroy']);
+        Route::get('/{id}', [WalletController::class, 'show']);
     });
 });
