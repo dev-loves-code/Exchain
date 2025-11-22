@@ -1,4 +1,6 @@
 <?php
+
+use App\Http\Controllers\BeneficiaryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -67,8 +69,16 @@ Route::middleware(['jwt', 'role:admin'])->group(function () {
 Route::middleware(['jwt'])->prefix('payments')->group(function () {
 
     Route::post('/recharge-wallet', [PaymentController::class, 'rechargeWallet']);
-    
+
     Route::get('/wallet-balance', [PaymentController::class, 'getWalletBalance']);
     Route::get('/payment-methods', [PaymentController::class, 'listPaymentMethods']);
 
+});
+
+Route::middleware(['jwt'])->prefix('beneficiaries') -> group(function () {
+    Route::get('/', [BeneficiaryController::class, 'index']);
+    Route::post('/create', [BeneficiaryController::class, 'create']);
+    Route::get('view/{id}', [BeneficiaryController::class, 'show']);
+    Route::put('update/{id}', [BeneficiaryController::class, 'update']);
+    Route::delete('destroy/{id}', [BeneficiaryController::class, 'destroy']);
 });

@@ -14,9 +14,12 @@ class Beneficiary extends Model
         'user_id',
         'name',
         'email',
+        'payment_method_id',
         'wallet_id',
         'bank_account_id',
+        'created_at',
     ];
+
 
     public function user(): BelongsTo
     {
