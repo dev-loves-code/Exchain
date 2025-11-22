@@ -7,12 +7,13 @@ use App\Models\Beneficiary;
 use App\Models\PaymentMethod;
 use App\Models\Wallet;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Nette\Schema\ValidationException;
 
 class BeneficiaryController extends Controller
 {
     public function index(Request $request){
-        $user_id = $request->user()->user_name;
+        $user_id = $request->user()->user_id;
         $data = Beneficiary::with(['paymentMethod','bankAccount','wallet'])
             ->where('user_id', $user_id);
 
@@ -25,14 +26,8 @@ class BeneficiaryController extends Controller
 
         return response()->json([
            'success' => true,
-           'beneficiaries' => $beneficiaries->map(function ($beneficiary) {
-               return [
-                 'beneficiary_id' => $beneficiary->id,
-                 'name' => $beneficiary->name,
-                   'payment_type_id' => $beneficiary->paymentMethod->method_type,
-               ];
-           })
-        ], 200);
+           'beneficiaries' => $beneficiaries,
+           ], 200);
 
     }
     // Store Beneficiary
@@ -101,5 +96,64 @@ class BeneficiaryController extends Controller
             'success' => true,
             'beneficiary' => $beneficiary
         ],201);
+    }
+
+    public function show(Request $request, $id){
+        $user_id = $request->user()->user_id;
+
+        $beneficiary = Beneficiary::with(['paymentMethod','bankAccount','wallet'])
+            ->WHERE('user_id', $user_id)
+            ->WHERE('beneficiary_id',$id)
+            ->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'beneficiary' => $beneficiary
+        ],200);
+    }
+
+    public function destroy(Request $request, $id){
+        $user_id  = $request->user()->user_id;
+        $beneficiary = Beneficiary::where('beneficiary_id', $id)
+                                    ->WHERE('user_id', $user_id)
+                                    ->firstOrFail();
+        $beneficiary->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Beneficiary deleted successfully'
+        ],200);
+    }
+
+    public function update(Request $request, $id){
+        $user_id = $request->user()->user_id;
+
+        $beneficiary = Beneficiary::where('beneficiary_id',$id)
+            ->where('user_id', $user_id)
+            ->firstOrFail();
+
+        $rules= [
+            'name' => 'required|string|max:150',
+            'email' => 'nullable|string|email|max:150',
+            'wallet_id' => 'nullable|integer|exists:wallets,wallet_id',
+            'payment_method_id' => 'nullable|integer|exists:payment_methods,payment_method_id',
+            'bank_account_id' => 'nullable|integer|exists:bank_accounts,bank_account_id',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()
+            ],422);
+        }
+
+        $beneficiary->fill($request->only(['name','email','payment_method_id','bank_account_id','wallet_id']));
+
+        $beneficiary->save();
+
+        return response()->json([
+            'success' => true,
+            'beneficiary' => $beneficiary->fresh()
+        ],200);
     }
 }
