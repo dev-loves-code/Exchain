@@ -16,6 +16,15 @@ class PaymentMethod extends Model
         'method_type',
         'card_last_four',
         'card_brand',
+        'stripe_payment_method_id',
+        'stripe_customer_id',
+        'is_default',
+        'exp_month',
+        'exp_year',
+    ];
+
+    protected $casts = [
+        'is_default' => 'boolean',
     ];
 
     public function user(): BelongsTo

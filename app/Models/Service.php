@@ -12,7 +12,6 @@ class Service extends Model
     protected $fillable = [
         'service_type',
         'transfer_speed',
-        'base_fee',
         'fee_percentage',
     ];
 
