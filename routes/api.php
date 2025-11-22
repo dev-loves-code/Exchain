@@ -6,6 +6,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\AgentProfileController;
+use App\Http\Controllers\TransactionController;
 
 // Google Auth routes
 Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
@@ -58,5 +59,14 @@ Route::middleware(['jwt', 'role:admin'])->group(function () {
     // admin agent status
     Route::prefix('admin')->group(function () {
         Route::patch('/agents/{agentId}/status', [AgentProfileController::class, 'updateStatus']);
+    });
+});
+
+Route::middleware(['jwt'])->group(function () {
+    Route::prefix('Transactions')->group(function () {
+        Route::post('/WalletToWallet', [TransactionController::class, 'walletToWalletTransfer'])->name('walletToWalletTransfer');
+        Route::put('/ApproveTransaction/{id}', [TransactionController::class, 'approveWalletToWalletTransfer'])->name('approveTransfer');
+        Route::put('/RejectTransaction/{id}', [TransactionController::class, 'rejectWalletToWalletTransfer'])->name('rejectTransfer');
+        Route::get('/WalletToWalletHistory', [TransactionController::class, 'getWalletToWalletTransactions']);
     });
 });
