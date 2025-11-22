@@ -80,5 +80,8 @@ Route::middleware(['jwt', 'role:admin'])->group(function () {
     // admin agent status
     Route::prefix('admin')->group(function () {
         Route::patch('/agents/{agentId}/status', [AgentProfileController::class, 'updateStatus']);
+
+        Route::patch('/agents/commission/update-all', [AgentProfileController::class, 'updateAllCommissions']);
+
     });
 });

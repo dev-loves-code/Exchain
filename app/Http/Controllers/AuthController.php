@@ -74,7 +74,6 @@ class AuthController extends Controller
             'phone_number' => 'required|string|max:20|unique:users',
             'password' => 'required|string|min:8|confirmed',
 
-            // AgentProfile fields
             'business_name' => 'required|string|max:200',
             'business_license' => 'nullable|string|max:100',
             'latitude' => 'nullable|numeric',
@@ -83,7 +82,6 @@ class AuthController extends Controller
             'city' => 'nullable|string|max:100',
             'working_hours_start' => 'nullable|date_format:H:i',
             'working_hours_end' => 'nullable|date_format:H:i',
-            'commission_rate' => 'nullable|numeric|min:1|max:6',
         ]);
 
         if ($validator->fails()) {
@@ -94,14 +92,7 @@ class AuthController extends Controller
         }
 
         $role = Role::where('role_name', 'agent')->first();
-        if (! $role) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Agent role not found',
-            ], 400);
-        }
 
-        // Create the user
         $user = User::create([
             'full_name' => $request->full_name,
             'email' => $request->email,
@@ -110,7 +101,6 @@ class AuthController extends Controller
             'role_id' => $role->role_id,
         ]);
 
-        // Create the agent profile (status pending)
         AgentProfile::create([
             'agent_id' => $user->user_id,
             'business_name' => $request->business_name,
@@ -121,13 +111,13 @@ class AuthController extends Controller
             'city' => $request->city,
             'working_hours_start' => $request->working_hours_start,
             'working_hours_end' => $request->working_hours_end,
-            'commission_rate' => $request->commission_rate ?? 0,
+            'commission_rate' => 5,
             'status' => 'pending',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Agent registration submitted. Awaiting approval.',
+            'message' => 'Agent registration submitted.',
             'data' => [
                 'user_id' => $user->user_id,
                 'email' => $user->email,

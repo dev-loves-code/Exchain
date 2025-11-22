@@ -81,13 +81,11 @@ class AgentProfileController extends Controller
         $validator = Validator::make($request->all(), [
             'business_name' => 'sometimes|string|max:200',
             'business_license' => 'nullable|string|max:100',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
             'working_hours_start' => 'nullable|date_format:H:i',
             'working_hours_end' => 'nullable|date_format:H:i',
-            'commission_rate' => 'nullable|numeric|between:1,6',
+
         ]);
 
         if ($validator->fails()) {
@@ -100,13 +98,10 @@ class AgentProfileController extends Controller
         $updateData = $request->only([
             'business_name',
             'business_license',
-            'latitude',
-            'longitude',
             'address',
             'city',
             'working_hours_start',
             'working_hours_end',
-            'commission_rate',
         ]);
 
         $profile = $this->agentProfileService->updateProfile($user->user_id, $updateData);
@@ -198,4 +193,29 @@ class AgentProfileController extends Controller
             'count' => $agents->count(),
         ], 200);
     }
+
+    public function updateAllCommissions(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role->role_name !== 'admin') {
+            return response()->json(['success' => false, 'message' => 'Only admins allowed'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'commission_rate' => 'required|numeric|min:1|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $updatedCount = $this->agentProfileService->updateAllCommissions($request->commission_rate);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Commission updated for {$updatedCount} agents",
+        ]);
+    }
+
 }

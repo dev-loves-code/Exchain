@@ -109,4 +109,22 @@ class AgentProfileService
             'created_at' => $profile->created_at,
         ];
     }
+
+    public function updateAllCommissions($rate)
+    {
+        return AgentProfile::query()->update(['commission_rate' => $rate]);
+    }
+
+    public function updateAgentCommission($agentId, $rate)
+    {
+        $profile = AgentProfile::where('agent_id', $agentId)->first();
+
+        if (! $profile) {
+            return null;
+        }
+
+        $profile->update(['commission_rate' => $rate]);
+
+        return $this->formatProfileData($profile->fresh(['agent']));
+    }
 }
