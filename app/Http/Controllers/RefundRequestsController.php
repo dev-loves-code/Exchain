@@ -70,12 +70,18 @@ class RefundRequestsController extends Controller
             ]);
         }
 
-        return response() -> json([
-            'amount' => $transaction->transfer_amount,
-            'currency' => $wallet->currency_code,
-            'description' => $refund_request -> description,
-            'status' => $refund_request -> status,
-        ]);
+            return response()->json([
+                'refund_id' => $refund_request->refund_id,
+                'transaction_id' => $refund_request->transaction_id,
+                'user_name' => $wallet->user->full_name ?? null,
+                'user_email' => $wallet->user->email ?? null,
+                'amount' => $transaction->transfer_amount,
+                'currency' => $wallet->currency_code,
+                'description' => $refund_request->description,
+                'status' => $refund_request->status,
+                'sent_at' => $refund_request->created_at,
+            ]);
+
         }
         catch(Exception $e){
             return response() -> json(['errors' => $e->getMessage()]);
