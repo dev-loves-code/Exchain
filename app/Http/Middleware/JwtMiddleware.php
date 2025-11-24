@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 
 class JwtMiddleware
 {
+
     /**
      * Handle an incoming request.
      */

@@ -7,6 +7,9 @@ use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\CurrencyRatesController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +71,30 @@ Route::middleware(['jwt'])->group(function () {
         Route::post('/cash-operations/{id}/cancel', [CashOperationController::class, 'cancel']);
     });
 
+    // Transactions (exchange-rate feature)
+    Route::prefix('Transactions')->group(function () {
+        Route::post('/WalletToWallet', [TransactionController::class, 'walletToWalletTransfer'])->name('walletToWalletTransfer');
+        Route::put('/ApproveTransaction/{id}', [TransactionController::class, 'approveWalletToWalletTransfer'])->name('approveTransfer');
+        Route::put('/RejectTransaction/{id}', [TransactionController::class, 'rejectWalletToWalletTransfer'])->name('rejectTransfer');
+        Route::get('/WalletToWalletHistory', [TransactionController::class, 'getWalletToWalletTransactions']);
+    });
+
+    // Wallets (exchange-rate feature)
+    Route::prefix('wallets')->group(function(){
+
+        /****ADMIN SIDE****/
+        Route::middleware(['role:admin'])->group(function(){
+            Route::get('/admin', [WalletController::class, 'adminGetAllWallets']);
+            Route::get('/admin/{user_id}', [WalletController::class, 'adminUserWallets']);
+        }); 
+
+        /****USER SIDE****/
+        Route::post('/', [WalletController::class, 'store']);
+        Route::get('/', [WalletController::class, 'getAllWallets']);
+        Route::patch('/{id}', [WalletController::class, 'destroy']);
+        Route::get('/{id}', [WalletController::class, 'show']);
+    });
+
 });
 
 // Admin-only routes
@@ -80,8 +107,12 @@ Route::middleware(['jwt', 'role:admin'])->group(function () {
     // admin agent status
     Route::prefix('admin')->group(function () {
         Route::patch('/agents/{agentId}/status', [AgentProfileController::class, 'updateStatus']);
-
         Route::patch('/agents/commission/update-all', [AgentProfileController::class, 'updateAllCommissions']);
-
     });
+});
+
+// Currency routes (exchange-rate feature)
+Route::prefix('currency')->group(function () {
+    Route::get('/list', [CurrencyRatesController::class, 'getCurrencies']);
+    Route::post('/validate', [CurrencyRatesController::class, 'validateCurrency']);
 });
