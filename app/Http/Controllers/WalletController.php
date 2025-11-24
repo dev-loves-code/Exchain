@@ -45,6 +45,12 @@ class WalletController extends Controller
             ], 422);
         } 
 
+        //validate currency
+        $isValidCurrency = $this->currencyService->isValidCurrency($request->currency_code);
+        if($isValidCurrency->getData()->success === false){
+            return $isValidCurrency;
+        }
+
         $wallet = Wallet::create([
             'user_id' => $request->user()->user_id,
             'balance' => 0.00,

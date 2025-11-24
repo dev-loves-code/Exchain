@@ -6,9 +6,11 @@ use App\Models\Transaction;
 use App\Models\Service;
 use App\Services\CurrencyRateService;
 use App\Models\User;
+use App\Models\RefundRequest;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class WalletToWalletService
 {
@@ -76,10 +78,10 @@ class WalletToWalletService
                 $exchange = $this->currencyService->exchange
                     ($amount_in_sender_currency, $senderWallet->currency_code, $receiverWallet->currency_code);
                 $amount_to_credit = $exchange['total'];
-                $exchange_rate = $exchange['exchange_rate'];
+                $exchange_rate = $exchange['rate_id'];
             }else{
                 $amount_to_credit = $amount_in_sender_currency;
-                $exchange_rate = 1;
+                $exchange_rate = null;
             }
 
             $senderWallet->balance = $senderWallet->balance - $amount_to_debit;
@@ -116,7 +118,10 @@ class WalletToWalletService
             
             //get the tranaction
             $transaction = Transaction::findOrFail($transaction_id);
-            
+            if($transaction->status !== 'pending'){
+                abort(404, 'Transaction not found or not pending');
+            }
+
             //check if the wallet exists and belongs to the user
             $receiver_wallet = $this->walletService->getUserWallet($user_id, $transaction->receiver_wallet_id);
             if(!$receiver_wallet){
@@ -124,6 +129,14 @@ class WalletToWalletService
                     'success' => false,
                     'message' => 'Receiver wallet not found or does not belong to the user',
                 ], 404);
+            }
+
+            $refund_request = RefundRequest::where('transaction_id',$transaction_id)
+               ->where('status','pending')
+               ->first();
+            
+            if($refund_request){
+                throw new \Exception('A refund request on this transaction is taking place. Cannot complete right now.');
             }
 
             //update the receiver wallet balance
@@ -140,9 +153,12 @@ class WalletToWalletService
                 'message' => 'Transfer approved successfully',
                 'transaction' => $transaction
             ]);
-        }catch(\Exception $exp){
+        }catch (\Exception $exp) {
             DB::rollback();
-            throw $exp;
+            return response()->json([
+                'success' => false,
+                'message' => $exp->getMessage()
+            ], 500);
         }
     }
 
@@ -152,7 +168,10 @@ class WalletToWalletService
 
             //get the transaction
             $transaction = Transaction::findOrFail($transaction_id);
-            
+            if($transaction->status !== 'pending'){
+                abort(404, 'Transaction not found or not pending');
+            }
+
             //check if the wallet exists and belongs to the user
             $receiver_wallet = $this->walletService->getUserWallet($user_id, $transaction->receiver_wallet_id);
             if(!$receiver_wallet){
@@ -169,7 +188,15 @@ class WalletToWalletService
                     'success'=>false,
                     'message' => 'Sender wallet not found',
                 ]);
-            }            
+            }
+            
+            $refund_request = RefundRequest::where('transaction_id',$transaction_id)
+               ->where('status','pending')
+               ->first();
+            
+            if($refund_request){
+                throw new \Exception('A refund request on this transaction is taking place. Cannot complete right now.');
+            }
             
             //update the sender wallet balance
             $sender_wallet->balance = $sender_wallet->balance + $transaction->transfer_amount;
@@ -189,7 +216,10 @@ class WalletToWalletService
 
         }catch(\Exception $exp){
             DB::rollback();
-            throw $exp;
+            return response()->json([
+                'success' => false,
+                'message' => $exp->getMessage()
+            ], 500);
         }
     }
 

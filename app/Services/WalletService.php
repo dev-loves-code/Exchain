@@ -26,15 +26,15 @@ class WalletService
 
     public function canDeleteWallet($wallet){
         
-        //1-check if balance > 10 $
+        //1-check if balance > 5 $
         if($wallet->currency_code != 'USD'){
-            $balance_in_usd = $this->currencyService->exchange($wallet->balance, $wallet->currency_code, 'USD');
+            $balance_in_usd = $this->currencyService->exchange($wallet->balance, $wallet->currency_code, 'USD')['total'];
         } else {
             $balance_in_usd = $wallet->balance;
         }
 
-        if( $balance_in_usd > 10){
-            return 'Balance is greater than 10 $';
+        if( $balance_in_usd > 5){
+            return 'Balance is greater than 5$';
         }
 
         //2-check if has transactions

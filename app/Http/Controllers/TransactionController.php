@@ -38,6 +38,12 @@ class TransactionController extends Controller
             ], 422);
         }
 
+        //validate currency
+        $isValidCurrency = $this->currencyService->isValidCurrency($request->currency_code);
+        if($isValidCurrency->getData()->success === false){
+            return $isValidCurrency;
+        }
+
         $transfer = $this->walletToWalletService->initiateWalletToWalletTransfer(
             $user_id,
             $request->sender_wallet_id,

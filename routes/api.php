@@ -8,6 +8,7 @@ use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\AgentProfileController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
+use App\Http\Controllers\CurrencyRatesController;
 
 // Google Auth routes
 Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
@@ -87,4 +88,9 @@ Route::middleware(['jwt'])->group(function(){
         Route::patch('/{id}', [WalletController::class, 'destroy']);
         Route::get('/{id}', [WalletController::class, 'show']);
     });
+});
+
+Route::prefix('currency')->group(function () {
+    Route::get('/list', [CurrencyRatesController::class, 'getCurrencies']);
+    Route::post('/validate', [CurrencyRatesController::class, 'validateCurrency']);
 });
