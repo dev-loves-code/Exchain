@@ -6,6 +6,7 @@ use App\Models\BankAccount;
 use App\Models\Beneficiary;
 use App\Models\PaymentMethod;
 use App\Models\Wallet;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Nette\Schema\ValidationException;
@@ -45,40 +46,40 @@ class BeneficiaryController extends Controller
                 'bank_account_id' => 'nullable|string|exists:bank_accounts,bank_account_id',
             ]);
 
-        }catch(ValidationException $e){
-            return response()->json(['errors'=> $e->errors()]);
+        }catch(Exception $e){
+            return response()->json(['errors'=> $e->errors()],422);
         }
 
         $pay_meth_id = $request->payment_method_id;
         if($pay_meth_id){
             $payment_meth = PaymentMethod::find($pay_meth_id);
-            if($payment_meth || $payment_meth->user_id !==$user_id){
+            if(!$payment_meth ){ //|| $payment_meth->user_id !==$user_id
                 return response()->json([
                    'success' => false,
                    'message' => 'Payment Method not found'
-                ]);
+                ],404);
             }
         }
 
         $wall_id = $request->wallet_id;
         if($wall_id){
             $wall = Wallet::find($wall_id);
-            if($wall || $wall->user_id !==$user_id){
+            if(!$wall ){ // || $wall->user_id !==$user_id
                 return response()->json([
                    'success' => false,
                    'message' => 'Wallet not found'
-                ]);
+                ],404);
             }
         }
 
         $bank_acc_id = $request->bank_account_id;
         if($bank_acc_id){
             $bank_acc = BankAccount::find($bank_acc_id);
-            if($bank_acc){
+            if(!$bank_acc){
                 return response()->json([
                     'success' => false,
                     'message' => 'Bank Account not found'
-                ]);
+                ],404);
             }
         }
 
