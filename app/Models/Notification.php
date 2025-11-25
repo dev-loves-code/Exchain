@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Notification extends Model
 {
     protected $primaryKey = 'notification_id';
+
     const UPDATED_AT = null;
 
     protected $fillable = [
@@ -19,6 +20,7 @@ class Notification extends Model
 
     protected $casts = [
         'is_read' => 'boolean',
+        'notification_id' => 'integer',
     ];
 
     public function user(): BelongsTo

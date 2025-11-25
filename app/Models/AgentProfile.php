@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class AgentProfile extends Model
 {
     protected $primaryKey = 'agent_id';
+
     public $incrementing = false;
+
     const UPDATED_AT = null;
 
     protected $fillable = [

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RefundRequest extends Model
 {
     protected $primaryKey = 'refund_id';
+
     const UPDATED_AT = null;
 
     protected $fillable = [

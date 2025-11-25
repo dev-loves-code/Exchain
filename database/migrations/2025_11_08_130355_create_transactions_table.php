@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('exchange_rate', 18, 6)->nullable();
             $table->enum('status', ['pending', 'rejected', 'done', 'refunded'])->default('pending');
             $table->timestamps();
-            
+
             $table->foreign('sender_wallet_id')->references('wallet_id')->on('wallets')->onDelete('restrict');
             $table->foreign('receiver_wallet_id')->references('wallet_id')->on('wallets')->onDelete('restrict');
             $table->foreign('agent_id')->references('user_id')->on('users')->onDelete('set null');

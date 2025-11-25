@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Role;
 use App\Models\SocialLogin;
+use App\Models\User;
+use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
-use Firebase\JWT\JWT;
 
 class GoogleAuthController extends Controller
 {
@@ -33,7 +33,7 @@ class GoogleAuthController extends Controller
                 // 2. If email exists, link to existing user
                 $user = User::where('email', $googleUser->getEmail())->first();
 
-                if (!$user) {
+                if (! $user) {
                     // 3. Create new user with default role 'user'
                     $role = Role::where('role_name', 'user')->first();
 
@@ -68,25 +68,19 @@ class GoogleAuthController extends Controller
 
             $token = JWT::encode($payload, config('jwt.secret'), 'HS256');
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Google login successful',
-                'data' => [
-                    'user' => [
-                        'user_id' => $user->user_id,
-                        'full_name' => $user->full_name,
-                        'email' => $user->email,
-                        'role' => $user->role->role_name,
-                    ],
-                    'token' => $token,
-                ],
-            ], 200);
+            // 6. Redirect to frontend callback with token & user info
+            $userData = urlencode(json_encode([
+                'user_id' => $user->user_id,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'role' => $user->role->role_name,
+            ]));
+
+            return redirect("http://localhost:5173/auth/google/callback?token={$token}&user={$userData}");
+
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Google login failed',
-                'error' => $e->getMessage(),
-            ], 500);
+            // Redirect with error message
+            return redirect('http://localhost:5173/auth/google/callback?error='.urlencode($e->getMessage()));
         }
     }
 }

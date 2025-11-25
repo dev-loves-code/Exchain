@@ -26,7 +26,7 @@ return new class extends Migration
     {
         // Add it back only if it's not there
         Schema::table('services', function (Blueprint $table) {
-            if (!Schema::hasColumn('services', 'base_fee')) {
+            if (! Schema::hasColumn('services', 'base_fee')) {
                 $table->decimal('base_fee', 18, 2)->default(0);
             }
         });

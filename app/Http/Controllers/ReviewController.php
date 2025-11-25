@@ -19,17 +19,18 @@ class ReviewController extends Controller
     public function show($id)
     {
         $review = Review::findOrFail($id);
+
         return response(['success' => true, 'data' => $review]);
     }
 
     public function store(Request $request)
     {
-         if ($request->user()->role_id !== 2) {
-        return response(['success' => false, 'message' => 'Cannot create review'], 403);
-    }
+        if ($request->user()->role_id !== 2) {
+            return response(['success' => false, 'message' => 'Cannot create review'], 403);
+        }
         $formFields = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
-            'review_text' => 'nullable|string'
+            'review_text' => 'nullable|string',
         ]);
 
         $formFields['user_id'] = $request->user()->user_id;
@@ -38,39 +39,39 @@ class ReviewController extends Controller
 
         return response([
             'success' => true,
-            'data' => $review
+            'data' => $review,
         ], 201);
     }
 
- public function update($id, Request $request)
-{
-    $user = $request->user();
-    if ($user->role_id !== 2) {
-        return response(['success' => false, 'message' => 'Cannot update review'], 403);
+    public function update($id, Request $request)
+    {
+        $user = $request->user();
+        if ($user->role_id !== 2) {
+            return response(['success' => false, 'message' => 'Cannot update review'], 403);
+        }
+
+        $review = Review::findOrFail($id);
+        if ($review->user_id !== $user->user_id) {
+            return response(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $formFields = $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'review_text' => 'nullable|string',
+        ]);
+
+        $review->update($formFields);
+
+        return response([
+            'success' => true,
+            'data' => $review,
+        ], 201);
     }
-
-    $review = Review::findOrFail($id);
-    if ($review->user_id !== $user->user_id) {
-        return response(['success' => false, 'message' => 'Unauthorized'], 403);
-    }
-
-    $formFields = $request->validate([
-        'rating' => 'required|integer|min:1|max:5',
-        'review_text' => 'nullable|string'
-    ]);
-
-    $review->update($formFields);
-
-    return response([
-        'success' => true,
-        'data' => $review
-    ], 201);
-}
 
     public function destroy($id, Request $request)
     {
         $review = Review::findOrFail($id);
-        $user = $request->user(); 
+        $user = $request->user();
 
         if ($user->role !== 'admin' && $review->user_id !== $user->user_id) {
             return response(['success' => false, 'message' => 'Unauthorized'], 403);

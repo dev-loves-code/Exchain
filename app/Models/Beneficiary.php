@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Beneficiary extends Model
 {
     protected $primaryKey = 'beneficiary_id';
+
     const UPDATED_AT = null;
 
     protected $fillable = [
