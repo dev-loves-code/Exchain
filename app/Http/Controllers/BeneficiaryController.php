@@ -36,19 +36,21 @@ class BeneficiaryController extends Controller
     public function create(Request $request)
     {
         $user_id = $request->user()->user_id;
-        try{
 
-            $request->validate([
-                'name' => 'required|string|max:150',
-                'email' => 'nullable|string|email|max:150',
-                'wallet_id' => 'nullable|integer|exists:wallets,wallet_id',
-                'payment_method_id' => 'nullable|integer|exists:payment_methods,payment_method_id',
-                'bank_account_id' => 'nullable|string|exists:bank_accounts,bank_account_id',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:150',
+            'email' => 'nullable|string|email|max:150',
+            'wallet_id' => 'nullable|integer|exists:wallets,wallet_id',
+            'payment_method_id' => 'nullable|integer|exists:payment_methods,payment_method_id',
+            'bank_account_id' => 'nullable|string|exists:bank_accounts,bank_account_id',
+        ]);
 
-        }catch(Exception $e){
-            return response()->json(['errors'=> $e->errors()],422);
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors()
+            ], 422);
         }
+
 
         $pay_meth_id = $request->payment_method_id;
         if($pay_meth_id){
@@ -145,12 +147,12 @@ class BeneficiaryController extends Controller
         ];
 
         $validator = Validator::make($request->all(), $rules);
-        if($validator->fails()){
+        if ($validator->fails()) {
             return response()->json([
-                'success' => false,
-                'message' => $validator->errors()
-            ],422);
+                'errors' => $validator->errors()
+            ], 422);
         }
+
 
         // Fill only allowed attributes
         $beneficiary->fill($request->only(['name','email','payment_method_id','bank_account_id','wallet_id']));
