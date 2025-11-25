@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SupportRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -18,16 +19,16 @@ class SupportRequestsController extends Controller
     public function store(Request $request)
     {
         // Validation for input
-        try {
-            $request->validate([
-                'subject' => 'required|string|max:150',
-                'description' => 'required|string',
-            ]);
-        }catch(ValidationException $e){
+        $validator = Validator::make($request->all(), [
+            'subject' => 'required|string|max:150',
+            'description' => 'required|string',
+        ]);
+        if ($validator->fails()) {
             return response() -> json([
-                'errors' => $e->errors()
+                'errors' => $validator->errors()
             ]);
         }
+
         // Creating support Request
         $support = SupportRequest::create([
             'user_id' => $request->user()->user_id,
@@ -77,16 +78,17 @@ class SupportRequestsController extends Controller
         $valid_order = ['latest','oldest'];
         $valid_statuses = ['pending', 'resolved', 'closed'];
 
-        try{
-        $request->validate([
-            'status' => ['nullable',Rule::in($valid_statuses)],
-            'order_by' => ['nullable',Rule::in($valid_order)],
+        $validator = Validator::make($request->all(), [
+            'status' => ['nullable', Rule::in($valid_statuses)],
+            'order_by' => ['nullable', Rule::in($valid_order)],
         ]);
-        }catch(ValidationException $e){
-            return response() -> json([
-                'errors' => $e->errors()
-            ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
         }
+
         $query = SupportRequest::query();
 
         if($role !== 'admin') {
@@ -173,15 +175,16 @@ class SupportRequestsController extends Controller
 
 
     // Validation for status input
-    try{
-        $request->validate([
-            'status' => ['nullable',Rule::in($valid_statuses)],
+        $validator = Validator::make($request->all(), [
+            'status' => ['nullable', Rule::in($valid_statuses)],
         ]);
-    }catch(ValidationException $e){
-        return response() -> json([
-            'errors' => $e->errors()
-        ]);
-    }
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
         // Check if !Admin
         if($role !== 'admin')
         {
