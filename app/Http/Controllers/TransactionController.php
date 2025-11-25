@@ -84,20 +84,21 @@ class TransactionController extends Controller
 
     public function initiateWalletToPersonTransfer(Request $request){
 
-        try {
-            $request->validate([
-                'sender_wallet_id' => 'required|integer',
-                'receiver_email' => 'required|string|email|max:255',
-                'transfer_amount' => 'required|numeric|min:5',
-                'currency_code' => 'required|string|size:3',
-                'include_fees' => 'required|boolean',
-            ]);
-        }catch(Exception $e){
+        $validator = Validator::make($request->all(), [
+            'sender_wallet_id' => 'required|integer',
+            'receiver_email' => 'required|string|email|max:255',
+            'transfer_amount' => 'required|numeric|min:5',
+            'currency_code' => 'required|string|size:3',
+            'include_fees' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $e->getMessage(),
+                'errors' => $validator->errors(),
             ], 422);
         }
+
 
 
         try{
@@ -152,16 +153,17 @@ class TransactionController extends Controller
     // Admin Wallet to person
 
     public function verifyTransactionAgent(Request $request){
-        try{
-            $request->validate([
-                'reference_code' => 'required|string',
-            ]);
-        }catch(Exception $e){
+        $validator = Validator::make($request->all(), [
+            'reference_code' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ]);
+                'errors' => $validator->errors(),
+            ], 422);
         }
+
 
         return $this->walletToPersonService->verifyTransaction(
             $request->reference_code,
@@ -169,21 +171,22 @@ class TransactionController extends Controller
     }
 
     public function completeTransactionAgent(Request $request){
-        try {
-            $request->validate([
-                'transaction_id' => 'required|integer',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'transaction_id' => 'required|integer',
+        ]);
 
-            return $this->walletToPersonService->completeWalletToPersonTransactions(
-                $request->transaction_id,
-                $request->user()->user_id
-            );
-        }catch(Exception $e){
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ]);
+                'errors' => $validator->errors(),
+            ], 422);
         }
+
+        return $this->walletToPersonService->completeWalletToPersonTransactions(
+            $request->transaction_id,
+            $request->user()->user_id
+        );
+
     }
 
 }
