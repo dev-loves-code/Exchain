@@ -1,18 +1,15 @@
 <?php
-
-use App\Http\Controllers\AgentProfileController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CashOperationController;
-use App\Http\Controllers\GoogleAuthController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\CurrencyRatesController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\AgentProfileController;
 
 // Google Auth routes
 Route::get('auth/google', [GoogleAuthController::class, 'redirectToGoogle']);
@@ -77,16 +74,29 @@ Route::middleware(['jwt'])->group(function () {
         Route::put('/ApproveTransaction/{id}', [TransactionController::class, 'approveWalletToWalletTransfer'])->name('approveTransfer');
         Route::put('/RejectTransaction/{id}', [TransactionController::class, 'rejectWalletToWalletTransfer'])->name('rejectTransfer');
         Route::get('/WalletToWalletHistory', [TransactionController::class, 'getWalletToWalletTransactions']);
+
+        // Wallet To person:
+        // User
+        Route::post('/initiate-wallet-to-person', [TransactionController::class, 'initiateWalletToPersonTransfer'])->name('walletToPerson');
+        Route::get('receipt/{id}', [TransactionController::class, 'getReceipt']);
+        Route::get('transactions-history-w2p', [TransactionController::class, 'getTransactions']);
+
+        Route::prefix('agent/wallet-to-person')
+            ->middleware(['role:agent'])
+            ->group(function () {
+                Route::post('verify', [TransactionController::class, 'verifyTransactionAgent']);
+                Route::post('complete', [TransactionController::class, 'completeTransactionAgent']);
+            });
     });
 
     // Wallets (exchange-rate feature)
-    Route::prefix('wallets')->group(function(){
+    Route::prefix('wallets')->group(function () {
 
         /****ADMIN SIDE****/
-        Route::middleware(['role:admin'])->group(function(){
+        Route::middleware(['role:admin'])->group(function () {
             Route::get('/admin', [WalletController::class, 'adminGetAllWallets']);
             Route::get('/admin/{user_id}', [WalletController::class, 'adminUserWallets']);
-        }); 
+        });
 
         /****USER SIDE****/
         Route::post('/', [WalletController::class, 'store']);
@@ -95,24 +105,24 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('/{id}', [WalletController::class, 'show']);
     });
 
-});
 
 // Admin-only routes
-Route::middleware(['jwt', 'role:admin'])->group(function () {
-    // services
-    Route::post('services', [ServiceController::class, 'store']);
-    Route::put('services/{id}', [ServiceController::class, 'update']);
-    Route::delete('services/{id}', [ServiceController::class, 'destroy']);
+    Route::middleware(['jwt', 'role:admin'])->group(function () {
+        // services
+        Route::post('services', [ServiceController::class, 'store']);
+        Route::put('services/{id}', [ServiceController::class, 'update']);
+        Route::delete('services/{id}', [ServiceController::class, 'destroy']);
 
-    // admin agent status
-    Route::prefix('admin')->group(function () {
-        Route::patch('/agents/{agentId}/status', [AgentProfileController::class, 'updateStatus']);
-        Route::patch('/agents/commission/update-all', [AgentProfileController::class, 'updateAllCommissions']);
+        // admin agent status
+        Route::prefix('admin')->group(function () {
+            Route::patch('/agents/{agentId}/status', [AgentProfileController::class, 'updateStatus']);
+            Route::patch('/agents/commission/update-all', [AgentProfileController::class, 'updateAllCommissions']);
+        });
     });
-});
 
 // Currency routes (exchange-rate feature)
-Route::prefix('currency')->group(function () {
-    Route::get('/list', [CurrencyRatesController::class, 'getCurrencies']);
-    Route::post('/validate', [CurrencyRatesController::class, 'validateCurrency']);
+    Route::prefix('currency')->group(function () {
+        Route::get('/list', [CurrencyRatesController::class, 'getCurrencies']);
+        Route::post('/validate', [CurrencyRatesController::class, 'validateCurrency']);
+    });
 });

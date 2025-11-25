@@ -26,7 +26,7 @@ class WalletService
     }
 
     public function canDeleteWallet($wallet){
-        
+
         //1-check if balance > 5 $
         if($wallet->currency_code != 'USD'){
             $balance_in_usd = $this->currencyService->exchange($wallet->balance, $wallet->currency_code, 'USD')['total'];
@@ -51,7 +51,7 @@ class WalletService
             ->where(function (Builder $query) use ($wallet_id){
                 $query->Where('sender_wallet_id', $wallet_id)
                     ->orWhere('receiver_wallet_id', $wallet_id);
-            })           
+            })
             ->exists();
     }
 
