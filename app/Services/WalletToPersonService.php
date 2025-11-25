@@ -56,10 +56,12 @@ class WalletToPersonService
 
                 $receiver_amount = $exchange['total'];
                 $exchange_rate   = $exchange['exchange_rate'];
+                $exchange_rate_id = $exchange['rate_id']; // Added this for currency rate api
 
             } else {
                 $receiver_amount = $requested_amount;
                 $exchange_rate   = 1;
+                $exchange_rate_id = null; // Added this for currency rate api
             }
 
            // Fees Calculation for sender
@@ -344,7 +346,7 @@ class WalletToPersonService
                 'message' => 'Receipt has been completed',
                 'data' => [
                     'transaction_id' => $transaction->transaction_id,
-                    'amount_received' => $transaction->transfer_amount,
+                    'amount_received' => $transaction->received_amount,
                     'receiver_email' => $transaction->receiver_email,
                     'completed_at' => now(),
                 ]
