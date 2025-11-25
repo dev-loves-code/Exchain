@@ -65,7 +65,7 @@ class WalletToPersonService
             }
 
            // Fees Calculation for sender
-            $fees_sender = $service->fee_percentage * $requested_amount;
+            $fees_sender = ($service->fee_percentage / 100) * $requested_amount;
 
 
             if ($include_fees) {
@@ -278,7 +278,7 @@ class WalletToPersonService
             ->first();
 
         if ($agent_wallet && $agent_profile && $agent_profile->commission_rate > 0) {
-            $commission_in_txn_currency = $transaction->transfer_fee * $agent_profile->commission_rate;
+            $commission_in_txn_currency = $transaction->transfer_fee * ($agent_profile->commission_rate / 100);
 
             if ($agent_wallet->currency_code !== $transaction->senderWallet->currency_code) {
                 $exchange = $this->currencyService->exchange(
