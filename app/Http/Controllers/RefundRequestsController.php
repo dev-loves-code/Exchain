@@ -8,6 +8,7 @@ use App\Models\Wallet;
 use App\Services\RefundRequestService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Nette\Schema\ValidationException;
 
@@ -21,13 +22,16 @@ class RefundRequestsController extends Controller
     public function create(Request $request)
     {
 
-        try {
-            $request->validate([
-                'description'=> 'required|string',
-            ]);
-        }catch(ValidationException $e){
-            return response() -> json(['errors' => $e->errors()]);
+        $validator = Validator::make($request->all(), [
+            'description' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
         }
+
 
         $already_exists = RefundRequest::where('transaction_id',$request->transaction_id)->exists();
         if ($already_exists) {
@@ -48,6 +52,7 @@ class RefundRequestsController extends Controller
         ],201);
 
         // Notification for user and admin
+        //<---------------------------------------------->
     }
 
     // Single Refund request
@@ -97,14 +102,17 @@ class RefundRequestsController extends Controller
         $valid_order = ['latest','oldest'];
         $valid_statuses = ['pending', 'approved', 'rejected', 'completed'];
 
-        try{
-            $request->validate([
-                'status' => ['nullable',Rule::in($valid_statuses)],
-                'order_by' => ['nullable',Rule::in($valid_order)],
-            ]);
-        }catch(Exception $e){
-            return response() -> json(['errors' => $e->errors()],422);
+        $validator = Validator::make($request->all(), [
+            'status' => ['nullable', Rule::in($valid_statuses)],
+            'order_by' => ['nullable', Rule::in($valid_order)],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
         }
+
         $user_role = $request->user()->role->role_name;
 
         if($user_role !== "admin")
@@ -162,9 +170,18 @@ class RefundRequestsController extends Controller
                 ],401);
             }
 
-            $validated = $request->validate([
+            $validator = Validator::make($request->all(), [
                 'rejected_reason' => 'nullable|string|max:255',
             ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $validated = $validator->validated();
+
 
             $refundRequest = $this->refundRequestService->rejectRefundRequest(
                 $id,
