@@ -10,14 +10,33 @@ return new class extends Migration
     {
         Schema::create('beneficiaries', function (Blueprint $table) {
             $table->id('beneficiary_id');
-            $table->foreignId('user_id')->constrained('users', 'user_id')->onDelete('cascade');
+
+            $table->foreignId('user_id')
+                ->constrained('users', 'user_id')
+                ->cascadeOnDelete();
+
             $table->string('name', 150);
             $table->string('email', 150)->nullable();
-            $table->unsignedBigInteger('wallet_id')->nullable();
-            $table->string('bank_account', 100)->nullable();
-            $table->timestamp('created_at')->useCurrent();
 
-            $table->foreign('wallet_id')->references('wallet_id')->on('wallets')->onDelete('set null');
+            $table->unsignedBigInteger('payment_method_id')->nullable();
+            $table->foreign('payment_method_id')
+                ->references('payment_method_id')
+                ->on('payment_methods')
+                ->nullOnDelete();
+
+            $table->unsignedBigInteger('wallet_id')->nullable();
+            $table->foreign('wallet_id')
+                ->references('wallet_id')
+                ->on('wallets')
+                ->nullOnDelete();
+
+            $table->unsignedBigInteger('bank_account_id')->nullable();
+            $table->foreign('bank_account_id')
+                ->references('bank_account_id')
+                ->on('bank_accounts')
+                ->nullOnDelete();
+
+            $table->timestamp('created_at')->useCurrent();
         });
     }
 

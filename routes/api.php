@@ -12,6 +12,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\CurrencyRatesController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\BeneficiaryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -119,6 +120,15 @@ Route::middleware(['jwt'])->group(function () {
             Route::get('request-admin/{id}', [SupportRequestsController::class, 'showSingleRequestAdmin']);
             Route::put('request/{id}', [SupportRequestsController::class, 'update']);
         });
+    });
+
+    // Beneficiaries
+    Route::prefix('beneficiaries')->group(function () {
+        Route::get('/', [BeneficiaryController::class, 'index']);
+        Route::post('create', [BeneficiaryController::class, 'create']);
+        Route::get('view/{id}', [BeneficiaryController::class, 'show']);
+        Route::put('update/{id}', [BeneficiaryController::class, 'update']);
+        Route::delete('destroy/{id}', [BeneficiaryController::class, 'destroy']);
     });
 
     // Admin-only routes
