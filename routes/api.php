@@ -172,3 +172,4 @@ Route::middleware(['jwt'])->group(function () {
         });
     });
 });
+

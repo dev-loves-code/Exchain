@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -49,6 +50,21 @@ class AuthController extends Controller
         ]);
 
         $token = $this->generateToken($user);
+
+        // Notification Section
+        $emailService = app(EmailService::class);
+        $data = [
+          'success' => true,
+            'title' => 'Welcome to Exchain',
+            'subtitle' => 'Your account has been created successfully!',
+            'cta_url' => url('/auth/login'),
+            'cta_text' => 'Login Now',
+
+        ];
+
+        $emailService->sendUserSignup($user, $data);
+
+        //End Notification Section
 
         return response()->json([
             'success' => true,
@@ -114,6 +130,37 @@ class AuthController extends Controller
             'commission_rate' => 5,
             'status' => 'pending',
         ]);
+
+        // Notifications Area
+
+        $emailService = app(EmailService::class);
+
+        $agentPayload = [
+            'subject' => 'Welcome to Exchain!',
+            'title' => 'Welcome!',
+            'subtitle' => 'Your agent account for '. $request->business_name.  '  is being processed.',
+            'message' => 'Once processed you can manage your services and profile.',
+            'cta_text' => 'Go to Dashboard',
+            'cta_url' => url('/auth/login'),
+        ];
+
+        $adminPayload = [
+            'subject' => 'New Agent Signed Up',
+            'title' => 'New Agent Alert',
+            'subtitle' => $user->full_name . ' registered as '. $request->business_name,
+            'message' => 'Agent Email: ' . $user->email . ' Please review their application.',
+            'cta_text' => 'View Agent',
+            'cta_url' => url('/admin/agents'), // make changes if changed
+        ];
+
+
+        $emailService->sendAgentSignup($user, $agentPayload);
+        $admin = User::where('role_id',1)->firstOrFail();
+        $emailService->sendAgentSignup($admin, $adminPayload);
+
+
+        //End Notification Area
+
 
         return response()->json([
             'success' => true,
