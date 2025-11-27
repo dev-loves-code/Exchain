@@ -83,10 +83,22 @@ Route::middleware(['jwt'])->group(function () {
 
     // Transactions
     Route::prefix('transactions')->group(function () {
+        // Wallet to Wallet transfers
         Route::post('wallet-to-wallet', [TransactionController::class, 'walletToWalletTransfer']);
         Route::put('approve/{id}', [TransactionController::class, 'approveWalletToWalletTransfer']);
         Route::put('reject/{id}', [TransactionController::class, 'rejectWalletToWalletTransfer']);
         Route::get('wallet-to-wallet-history', [TransactionController::class, 'getWalletToWalletTransactions']);
+
+        // Wallet to Person transfers
+        Route::post('initiate-wallet-to-person', [TransactionController::class, 'initiateWalletToPersonTransfer']);
+        Route::get('receipt/{id}', [TransactionController::class, 'getReceipt']);
+        Route::get('transactions-history-w2p', [TransactionController::class, 'getTransactions']);
+
+        // Agent routes for Wallet to Person
+        Route::prefix('agent/wallet-to-person')->middleware(['role:agent'])->group(function () {
+            Route::post('verify', [TransactionController::class, 'verifyTransactionAgent']);
+            Route::post('complete', [TransactionController::class, 'completeTransactionAgent']);
+        });
     });
 
     // Wallets
