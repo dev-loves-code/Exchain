@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AgentProfileController;
+use App\Http\Controllers\SupportRequestsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CashOperationController;
 use App\Http\Controllers\GoogleAuthController;
@@ -105,6 +106,19 @@ Route::middleware(['jwt'])->group(function () {
         Route::post('recharge-wallet', [PaymentController::class, 'rechargeWallet']);
         Route::get('wallet-balance', [PaymentController::class, 'getWalletBalance']);
         Route::get('payment-methods', [PaymentController::class, 'listPaymentMethods']);
+    });
+
+    // Support requests
+    Route::prefix('support')->group(function () {
+        Route::post('request', [SupportRequestsController::class, 'store']);
+        Route::get('request/{id}', [SupportRequestsController::class, 'showSingleRequest']);
+        Route::get('request', [SupportRequestsController::class, 'filterSupportRequests']);
+        
+        // Admin support routes
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('request-admin/{id}', [SupportRequestsController::class, 'showSingleRequestAdmin']);
+            Route::put('request/{id}', [SupportRequestsController::class, 'update']);
+        });
     });
 
     // Admin-only routes
