@@ -88,6 +88,11 @@ class User extends Authenticatable
         return $this->hasMany(CashOperation::class, 'user_id', 'user_id');
     }
 
+    public function stripePayments(): HasMany
+    {
+        return $this->hasMany(StripePayment::class, 'user_id', 'user_id');
+    }
+
     // Helper methods
     public function isAdmin(): bool
     {

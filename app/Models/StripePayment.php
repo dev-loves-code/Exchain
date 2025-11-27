@@ -5,26 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class PaymentMethod extends Model
+class StripePayment extends Model
 {
-    protected $primaryKey = 'payment_method_id';
-
-    const UPDATED_AT = null;
+    protected $primaryKey = 'stripe_payment_id';
 
     protected $fillable = [
         'user_id',
-        'method_type',
-        'card_last_four',
-        'card_brand',
+        'stripe_charge_id',
         'stripe_payment_method_id',
-        'stripe_customer_id',
-        'is_default',
-        'exp_month',
-        'exp_year',
+        'amount',
+        'currency',
+        'payment_type',
+        'status',
+        'description',
+        'stripe_metadata',
     ];
 
     protected $casts = [
-        'is_default' => 'boolean',
+        'amount' => 'decimal:2',
+        'stripe_metadata' => 'json',
     ];
 
     public function user(): BelongsTo
