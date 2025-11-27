@@ -13,6 +13,7 @@ use App\Http\Controllers\WalletController;
 use App\Http\Controllers\CurrencyRatesController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\BeneficiaryController;
+use App\Http\Controllers\RefundRequestsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -131,6 +132,20 @@ Route::middleware(['jwt'])->group(function () {
         Route::delete('destroy/{id}', [BeneficiaryController::class, 'destroy']);
     });
 
+    // Refunds
+    Route::prefix('refund')->group(function () {
+        Route::post('request-create', [RefundRequestsController::class, 'create']);
+        Route::get('request-view/{id}', [RefundRequestsController::class, 'viewSingleRefundRequest']);
+        Route::put('request-cancel/{id}', [RefundRequestsController::class, 'cancelRefund']);
+        
+        // Admin refund routes
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('requests-view-all', [RefundRequestsController::class, 'viewAllRefundRequests']);
+            Route::put('request-complete/{id}', [RefundRequestsController::class, 'completeRefund']);
+            Route::put('request-reject/{id}', [RefundRequestsController::class, 'rejectRefund']);
+        });
+    });
+
     // Admin-only routes
     Route::middleware(['role:admin'])->group(function () {
         // Services management
@@ -144,17 +159,4 @@ Route::middleware(['jwt'])->group(function () {
             Route::patch('agents/commission/update-all', [AgentProfileController::class, 'updateAllCommissions']);
         });
     });
-});
-
-Route::middleware(['jwt'])->prefix('/refund')->group(function () {
-    Route::post('/request-create',[\App\Http\Controllers\RefundRequestsController::class,'create']);
-    Route::get('/request-view/{id}',[\App\Http\Controllers\RefundRequestsController::class,'viewSingleRefundRequest']);
-    Route::put('/request-cancel/{id}',[\App\Http\Controllers\RefundRequestsController::class,'cancelRefund']);
-
-    Route::middleware(['role:admin'])->group(function () {
-        Route::get('/requests-view-all',[\App\Http\Controllers\RefundRequestsController::class,'viewAllRefundRequests']);
-        Route::put('/request-complete/{id}',[\App\Http\Controllers\RefundRequestsController::class,'completeRefund']);
-        Route::put('/request-reject/{id}',[\App\Http\Controllers\RefundRequestsController::class,'rejectRefund']);
-    });
-
 });
