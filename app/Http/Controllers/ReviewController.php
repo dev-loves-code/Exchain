@@ -9,18 +9,21 @@ use Illuminate\Http\Response;
 class ReviewController extends Controller
 {
     public function index(Request $request)
-    {
-        $reviews = Review::paginate($request->get('perPage', 15))
-            ->appends($request->query());
+{
+    $query = Review::with('user:user_id,full_name'); 
+    
+    // Use the $query variable instead of Review::paginate()
+    $reviews = $query->paginate($request->get('perPage', 15))
+        ->appends($request->query());
 
-        return response(['success' => true, 'data' => $reviews]);
-    }
+    return response(['success' => true, 'data' => $reviews]);
+}
 
-    public function show($id)
-    {
-        $review = Review::findOrFail($id);
-        return response(['success' => true, 'data' => $review]);
-    }
+public function show($id)
+{
+    $review = Review::with('user:user_id,full_name')->findOrFail($id);
+    return response(['success' => true, 'data' => $review]);
+}
 
     public function store(Request $request)
     {

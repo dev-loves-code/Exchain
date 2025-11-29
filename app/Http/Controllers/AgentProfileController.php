@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Services\AgentProfileService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
 class AgentProfileController extends Controller
 {
     protected $agentProfileService;
@@ -169,25 +169,39 @@ class AgentProfileController extends Controller
     /**
      * List agents with optional filters (city, name)
      */
-    public function listAgents(Request $request)
-    {
-        $user = $request->user();
-        
-        // If user is admin, allow status filter, otherwise force 'accepted'
-        $isAdmin = $user && $user->role->role_name === 'admin';
-        
-        $filters = [
-            'city' => $request->input('city'),
-            'name' => $request->input('name'),
-            'status' => $isAdmin ? $request->input('status') : 'accepted',
-        ];
+public function listAgents(Request $request)
+{
+    $user = $request->user();
+    $isAdmin = $user && $user->role->role_name === 'admin';
 
-        $agents = $this->agentProfileService->listAgents($filters);
+    $filters = [
+        'city' => $request->input('city'),
+        'name' => $request->input('name'),
+        'status' => $isAdmin ? $request->input('status') : 'accepted',
+    ];
 
-        return response()->json([
-            'success' => true,
-            'data' => $agents,
-            'count' => $agents->count()
-        ], 200);
-    }
+    $agents = $this->agentProfileService->listAgents($filters);
+
+    $agentsCollection = collect($agents)->map(function ($agent) {
+        $profile = is_array($agent) ? $agent : $agent->toArray();
+
+        $totalCommission = \App\Models\CashOperation::where('agent_id', $profile['agent_id'] ?? $profile['user_id'])
+            ->where('status', 'approved')
+            ->sum(DB::raw('ROUND(amount * agent_commission / 100, 2)'));
+
+        return array_merge($profile, [
+            'user_id' => $profile['agent_id'] ?? $profile['user_id'],
+            'full_name' => $profile['full_name'] ?? ($profile['name'] ?? 'N/A'),
+            'email' => $profile['email'] ?? 'N/A',
+            'phone' => $profile['phone'] ?? 'N/A',
+            'total_commission' => $totalCommission,
+        ]);
+    });
+
+    return response()->json([
+        'success' => true,
+        'data' => $agentsCollection,
+        'count' => $agentsCollection->count(),
+    ], 200);
+}
 }
