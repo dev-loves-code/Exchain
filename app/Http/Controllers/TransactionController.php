@@ -89,6 +89,7 @@ class TransactionController extends Controller
             'receiver_email' => 'required|string|email|max:255',
             'transfer_amount' => 'required|numeric|min:5',
             'currency_code' => 'required|string|size:3',
+            'service_id' => 'required|integer|exists:services,service_id',
             'include_fees' => 'required|boolean',
         ]);
 
@@ -110,6 +111,7 @@ class TransactionController extends Controller
                 $request->receiver_email,
                 $request->transfer_amount,
                 $request->currency_code,
+                $request->service_id,
                 $request->include_fees);
 
             // Add Notification here Priority 1 <---------------------------------------------------------------------

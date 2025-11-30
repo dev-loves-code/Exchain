@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AgentCommissionW2P;
+use App\Models\CurrencyRate;
 use App\Models\RefundRequest;
 use App\Models\Service;
 use App\Models\Transaction;
@@ -24,6 +25,7 @@ class WalletToPersonService
         $receiver_email,
         $amount,
         $currency,
+        $service_id,// changed here
         $include_fees
     ){
         DB::beginTransaction();
@@ -35,7 +37,9 @@ class WalletToPersonService
                 throw new Exception('Sender wallet not found');
             }
 
-            $service = Service::where('service_type', 'cash_out')->firstOrFail();
+            $service = Service::where('service_type', 'cash_out')
+                ->where('service_id', $service_id)
+                ->firstOrFail();
 
             $requested_currency = strtoupper($currency);
             $requested_amount   = $amount;
@@ -100,7 +104,7 @@ class WalletToPersonService
                 'transfer_amount'  => $requested_amount,
                 'transfer_fee'     => $fees_sender,
                 'received_amount'  => $received_amount,
-                'exchange_rate'    => $exchange_rate,
+                'exchange_rate'    => $exchange_rate_id,
                 'status'           => 'pending'
             ]);
 
@@ -127,6 +131,13 @@ class WalletToPersonService
             'agent'
         ])->findOrFail($transaction_id);
 
+
+        // Handle exchange rate safely
+        $exchange = null;
+        if ($transaction->exchange_rate) {
+            $exchange = CurrencyRate::find($transaction->exchange_rate);
+        }
+
         if ($transaction->senderWallet->user_id != $user_id) {
             throw new Exception('Unauthorized access to transaction.');
         }
@@ -148,13 +159,14 @@ class WalletToPersonService
                     'name'          => $transaction->receiver_name ?? 'N/A',
                     'email'         => $transaction->receiver_email,
                     'pickup_method' => 'Cash pickup at agent',
+                    'currency' => $exchange ? $exchange->to_currency : $transaction->senderWallet->currency_code,
                 ],
 
                 'transfer_details' => [
                     'amount'         => $transaction->transfer_amount,
                     'fee'            => $transaction->transfer_fee,
                     'received_amount'=> $transaction->received_amount,
-                    'exchange_rate'  => $transaction->exchange_rate,
+                    'exchange_rate'  => $exchange ? $exchange->exchange_rate : null,
                     'service_type'   => $transaction->service->service_type,
                     'transfer_speed' => $transaction->service->transfer_speed,
                 ],
@@ -219,6 +231,7 @@ class WalletToPersonService
             ], 400);
         }
 
+
         $transaction = Transaction::with(['senderWallet.user'])
             ->where('transaction_id', $transaction_id)
             ->first();
@@ -251,6 +264,16 @@ class WalletToPersonService
             ], 400);
         }
 
+        // Get currency: use exchange->to_currency if exists, otherwise sender wallet currency
+        $currency = $transaction->senderWallet->currency_code; // default to sender currency
+        if ($transaction->exchange_rate) {
+            $exchange = CurrencyRate::find($transaction->exchange_rate);
+            if ($exchange && $exchange->to_currency) {
+                $currency = $exchange->to_currency;
+            }
+        }
+
+
         return response()->json([
             'success' => true,
             'message' => 'Transaction successfully verified',
@@ -259,7 +282,7 @@ class WalletToPersonService
                 'reference_code' => $reference_code,
                 'receiver_email' => $transaction->receiver_email,
                 'amount_to_release' => $transaction->received_amount,
-                'currency' => $transaction->senderWallet->currency_code,
+                'currency' => $currency,
                 'sender_name' => $transaction->senderWallet->user->full_name,
                 'transfer_date' => $transaction->created_at->format('Y-m-d H:i:s'),
             ]
@@ -353,7 +376,10 @@ class WalletToPersonService
             ]);
         }catch(Exception $e){
             DB::rollback();
-            throw $e;
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 
