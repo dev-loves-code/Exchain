@@ -6,9 +6,6 @@ use App\Models\AgentProfile;
 
 class AgentProfileService
 {
-    /**
-     * Get agent profile by ID
-     */
     public function getProfileById($agentId)
     {
         $profile = AgentProfile::with('agent')->where('agent_id', $agentId)->first();
@@ -20,9 +17,7 @@ class AgentProfileService
         return $this->formatProfileData($profile);
     }
 
-    /**
-     * Update agent profile
-     */
+
     public function updateProfile($agentId, array $data)
     {
         $profile = AgentProfile::where('agent_id', $agentId)->first();
@@ -37,9 +32,6 @@ class AgentProfileService
         return $this->formatProfileData($profile);
     }
 
-    /**
-     * Update agent status (admin action)
-     */
     public function updateStatus($agentId, string $status)
     {
         $profile = AgentProfile::where('agent_id', $agentId)->first();
@@ -60,9 +52,6 @@ class AgentProfileService
         ];
     }
 
-    /**
-     * List agents with filters
-     */
     public function listAgents(array $filters = [])
     {
         $query = AgentProfile::with('agent');
@@ -74,8 +63,6 @@ class AgentProfileService
         if (! empty($filters['name'])) {
             $query->whereHas('agent', fn ($q) => $q->where('full_name', 'LIKE', '%'.$filters['name'].'%'));
         }
-
-        // Only apply status filter if provided
         if (isset($filters['status'])) {
             $query->where('status', $filters['status']);
         }
@@ -85,9 +72,6 @@ class AgentProfileService
         return $agents->map(fn ($profile) => $this->formatProfileData($profile));
     }
 
-    /**
-     * Format profile data for response
-     */
     private function formatProfileData($profile)
     {
         return [

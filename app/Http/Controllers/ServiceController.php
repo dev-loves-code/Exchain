@@ -6,23 +6,33 @@ use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Support\Facades\Log;
 
 class ServiceController extends Controller
 {
-    public function index(Request $request)
-    {
-        $services = QueryBuilder::for(Service::class)
-            ->allowedFilters([
-                AllowedFilter::exact('service_type'),
-                AllowedFilter::exact('transfer_speed'),
-            ])
-            ->allowedSorts(['service_id', 'service_type', 'transfer_speed', 'base_fee', 'fee_percentage', 'created_at'])
-            ->paginate($request->get('perPage', 10))
-            ->appends($request->query());
-
-        return response(['success' => true, 'data' => $services]);
+public function index(Request $request){
+    $query = Service::query();
+    
+    // Apply filters manually if they exist
+    if ($request->has('service_type')) {
+        $query->where('service_type', $request->service_type);
     }
+    
+    if ($request->has('transfer_speed')) {
+        $query->where('transfer_speed', $request->transfer_speed);
+    }
+    
+    $services = QueryBuilder::for($query)
+        ->allowedFilters([
+            AllowedFilter::exact('service_type'),
+            AllowedFilter::exact('transfer_speed'),
+        ])
+        ->allowedSorts(['service_id', 'service_type', 'transfer_speed', 'base_fee', 'fee_percentage', 'created_at'])
+        ->paginate($request->get('perPage', 10))
+        ->appends($request->query());
+
+    return response(['success' => true, 'data' => $services]);
+}
 
     public function show($id)
     {
@@ -56,11 +66,49 @@ class ServiceController extends Controller
         return response(['success' => true, 'data' => $service]);
     }
 
-    public function destroy($id)
-    {
+   public function destroy($id)
+{
+    try {
         $service = Service::findOrFail($id);
+        
+        // Check if service has any transactions
+        if ($service->transactions()->exists()) {
+            $transactionCount = $service->transactions()->count();
+            
+            return response()->json([
+                'success' => false,
+                'message' => "Cannot delete service because it has $transactionCount associated transaction(s). Please remove or reassign the transactions first."
+            ], 422);
+        }
+        
         $service->delete();
-
-        return response(['success' => true], Response::HTTP_NO_CONTENT);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Service deleted successfully'
+        ], 200); // Changed from 204 to 200 to include message
+        
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Service not found'
+        ], 404);
+        
+    } catch (\Exception $e) {
+        Log::error('Delete service error: ' . $e->getMessage());
+        
+        // Check if it's a foreign key constraint error
+        if (str_contains($e->getMessage(), 'foreign key constraint')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete service because it has associated transactions. Please remove the transactions first.'
+            ], 422);
+        }
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to delete service'
+        ], 500);
     }
+}
 }

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Services\AgentProfileService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
 class AgentProfileController extends Controller
 {
     protected $agentProfileService;

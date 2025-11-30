@@ -14,6 +14,14 @@ use App\Http\Controllers\CurrencyRatesController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\BeneficiaryController;
 use App\Http\Controllers\RefundRequestsController;
+use App\Http\Controllers\UserDashboardController;
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AgentDashboardController;
+use App\Http\Controllers\TransactionTrackingController;
+use App\Http\Controllers\GitHubAuthController;
+use App\Http\Controllers\ChatController;
+use App\Models\Transaction;
+use App\Events\TransactionStatusUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +31,10 @@ Route::prefix('auth')->group(function () {
     // Google Auth
     Route::get('google', [GoogleAuthController::class, 'redirectToGoogle']);
     Route::get('google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);
+    
+    // GitHub Auth
+    Route::get('github', [GitHubAuthController::class, 'redirectToGitHub']);
+    Route::get('github/callback', [GitHubAuthController::class, 'handleGitHubCallback']);
     
     // Registration & Login
     Route::post('register/user', [AuthController::class, 'registerUser']);
@@ -34,6 +46,19 @@ Route::prefix('auth')->group(function () {
 Route::prefix('currency')->group(function () {
     Route::get('list', [CurrencyRatesController::class, 'getCurrencies']);
     Route::post('validate', [CurrencyRatesController::class, 'validateCurrency']);
+});
+
+// Chat route (public)
+Route::post('/chat/ask', [ChatController::class, 'ask']);
+
+// Test route (public)
+Route::get('/test-wa/{id}', function($id) {
+    $transaction = Transaction::findOrFail($id);
+    event(new TransactionStatusUpdated($transaction));
+    return response()->json([
+        'status' => 'event fired',
+        'transaction_id' => $transaction->id
+    ]);
 });
 
 // Broadcasting auth
@@ -50,6 +75,10 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('me', [AuthController::class, 'me']);
     });
 
+    // Dashboard routes
+    Route::get('/user/dashboard', [UserDashboardController::class, 'dashboard']);
+    Route::get('/admin/dashboard', [AdminDashboardController::class, 'dashboard'])->middleware(['role:admin']);
+
     // Notifications
     Route::prefix('notifications')->group(function () {
         Route::get('/', [NotificationController::class, 'index']);
@@ -60,6 +89,10 @@ Route::middleware(['jwt'])->group(function () {
     Route::get('services', [ServiceController::class, 'index']);
     Route::get('services/{id}', [ServiceController::class, 'show']);
     Route::apiResource('reviews', ReviewController::class)->except(['create', 'edit']);
+
+    // Transaction tracking
+    Route::get('/transactions', [TransactionTrackingController::class, 'index']);
+    Route::get('/transactions/{id}/tracking', [TransactionTrackingController::class, 'show']);
 
     // Agents
     Route::prefix('agents')->group(function () {
@@ -75,6 +108,7 @@ Route::middleware(['jwt'])->group(function () {
 
     // Agent-specific routes
     Route::prefix('agent')->middleware(['role:agent'])->group(function () {
+        Route::get('/dashboard', [AgentDashboardController::class, 'dashboard']);
         Route::get('profile', [AgentProfileController::class, 'getPersonalProfile']);
         Route::put('profile', [AgentProfileController::class, 'updateProfile']);
         Route::post('cash-operations', [CashOperationController::class, 'create']);
@@ -103,19 +137,16 @@ Route::middleware(['jwt'])->group(function () {
 
     // Wallets
     Route::prefix('wallets')->group(function () {
-
         // Admin wallet routes
         Route::middleware(['role:admin'])->group(function () {
             Route::get('admin', [WalletController::class, 'adminGetAllWallets']);
             Route::get('admin/{user_id}', [WalletController::class, 'adminUserWallets']);
         });
 
-
         Route::get('/', [WalletController::class, 'getAllWallets']);
         Route::post('/', [WalletController::class, 'store']);
         Route::get('{id}', [WalletController::class, 'show']);
         Route::patch('{id}', [WalletController::class, 'destroy']);
-        
     });
 
     // Payments
@@ -170,9 +201,9 @@ Route::middleware(['jwt'])->group(function () {
 
         // Agent management
         Route::prefix('admin')->group(function () {
+            Route::get('agents', [AgentProfileController::class, 'listAgents']);
             Route::patch('agents/{agentId}/status', [AgentProfileController::class, 'updateStatus']);
             Route::patch('agents/commission/update-all', [AgentProfileController::class, 'updateAllCommissions']);
         });
     });
 });
-
