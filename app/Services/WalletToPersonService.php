@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AgentCommissionW2P;
+use App\Models\Beneficiary;
 use App\Models\CurrencyRate;
 use App\Models\RefundRequest;
 use App\Models\Service;
@@ -142,6 +143,10 @@ class WalletToPersonService
             throw new Exception('Unauthorized access to transaction.');
         }
 
+        $beneficiary = Beneficiary::where('email', $transaction->receiver_email)->first();
+        $receiver_name = $beneficiary ? $beneficiary->name : 'N/A';
+
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -156,7 +161,7 @@ class WalletToPersonService
                 ],
 
                 'receiver' => [
-                    'name'          => $transaction->receiver_name ?? 'N/A',
+                    'name'          =>  $receiver_name,
                     'email'         => $transaction->receiver_email,
                     'pickup_method' => 'Cash pickup at agent',
                     'currency' => $exchange ? $exchange->to_currency : $transaction->senderWallet->currency_code,
@@ -193,6 +198,7 @@ class WalletToPersonService
         return response() ->json([
             'success' => true,
             'data' => $transaction->map(function($transaction){
+                $refundRequest = RefundRequest::where('transaction_id', $transaction->transaction_id)->first();
                 return [
                     'transaction_id' => $transaction->transaction_id,
                     'reference_code' => $this->generateReferenceCode($transaction->transaction_id),
@@ -201,6 +207,7 @@ class WalletToPersonService
                     'transfer_fee' => $transaction->transfer_fee,
                     'received_amount' => $transaction->received_amount,
                     'status' => $transaction->status,
+                    'refund_request_id' => $refundRequest->refund_id ?? null,
                     'created_at' => $transaction->created_at,
                 ];
             })

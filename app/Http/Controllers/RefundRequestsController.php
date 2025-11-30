@@ -38,6 +38,11 @@ class RefundRequestsController extends Controller
             return response() -> json(['errors' => ["Refund request for this transaction already exists!"]],409);
         }
 
+        $transaction_not_pending = Transaction::where('transaction_id',$request->transaction_id)->first();
+        if ($transaction_not_pending->status !== "pending") {
+            return response() -> json(['errors' => ["Transaction cannot be refunded it is not pending."]],409);
+        }
+
         $refund_request = RefundRequest::create([
             'transaction_id' => $request ->transaction_id,
             'description' => $request->description,
