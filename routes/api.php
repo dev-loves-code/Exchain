@@ -103,16 +103,19 @@ Route::middleware(['jwt'])->group(function () {
 
     // Wallets
     Route::prefix('wallets')->group(function () {
-        Route::get('/', [WalletController::class, 'getAllWallets']);
-        Route::post('/', [WalletController::class, 'store']);
-        Route::get('{id}', [WalletController::class, 'show']);
-        Route::patch('{id}', [WalletController::class, 'destroy']);
-        
+
         // Admin wallet routes
         Route::middleware(['role:admin'])->group(function () {
             Route::get('admin', [WalletController::class, 'adminGetAllWallets']);
             Route::get('admin/{user_id}', [WalletController::class, 'adminUserWallets']);
         });
+
+
+        Route::get('/', [WalletController::class, 'getAllWallets']);
+        Route::post('/', [WalletController::class, 'store']);
+        Route::get('{id}', [WalletController::class, 'show']);
+        Route::patch('{id}', [WalletController::class, 'destroy']);
+        
     });
 
     // Payments
