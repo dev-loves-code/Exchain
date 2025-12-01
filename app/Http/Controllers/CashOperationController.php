@@ -200,28 +200,25 @@ class CashOperationController extends Controller
     $userId = $request->user()->user_id;
     
     $query = CashOperation::where('user_id', $userId)
-        ->with('wallet'); // Load wallet info
+        ->with('wallet');
     
-    
-    if ($request->has('status')) {
+    // Use filled() method to check if parameter exists AND is not empty
+    if ($request->filled('status')) {
         $query->where('status', $request->query('status'));
     }
     
-    
-    if ($request->has('operation_type')) {
+    if ($request->filled('operation_type')) {
         $query->where('operation_type', $request->query('operation_type'));
     }
     
-    
-    if ($request->has('start_date')) {
+    if ($request->filled('start_date')) {
         $query->whereDate('created_at', '>=', $request->query('start_date'));
     }
     
-    if ($request->has('end_date')) {
+    if ($request->filled('end_date')) {
         $query->whereDate('created_at', '<=', $request->query('end_date'));
     }
     
-   
     $perPage = $request->query('per_page', 20);
     $cashOperations = $query->orderBy('created_at', 'desc')->paginate($perPage);
     
@@ -237,45 +234,84 @@ class CashOperationController extends Controller
     ]);
 }
 
-
 public function getAgentCashOperations(Request $request)
 {
     $agentId = $request->user()->user_id;
     
     $query = CashOperation::where('agent_id', $agentId)
-        ->with(['user', 'wallet']); // Load user and wallet info
+        ->with(['user', 'wallet']);
     
-    
-    if ($request->has('status')) {
+    if ($request->filled('status')) {
         $query->where('status', $request->query('status'));
     }
     
-    
-    if ($request->has('operation_type')) {
+    if ($request->filled('operation_type')) {
         $query->where('operation_type', $request->query('operation_type'));
     }
     
-    
-    if ($request->has('user_id')) {
+    if ($request->filled('user_id')) {
         $query->where('user_id', $request->query('user_id'));
     }
     
-    
-    if ($request->has('start_date')) {
+    if ($request->filled('start_date')) {
         $query->whereDate('created_at', '>=', $request->query('start_date'));
     }
     
-    if ($request->has('end_date')) {
+    if ($request->filled('end_date')) {
         $query->whereDate('created_at', '<=', $request->query('end_date'));
     }
-    
     
     $perPage = $request->query('per_page', 20);
     $cashOperations = $query->orderBy('created_at', 'desc')->paginate($perPage);
     
+    // Calculate statistics with proper currency conversion
+    $totalCommissionUSD = 0;
+    $totalDepositsUSD = 0;
+    $totalWithdrawalsUSD = 0;
+    
+    foreach ($cashOperations->items() as $operation) {
+        // Convert amounts to USD using the exchange service
+        if ($operation->currency_code !== 'USD') {
+            // Convert operation amount to USD
+            $amountExchange = $this->currencyService->exchange(
+                $operation->amount,
+                $operation->currency_code,
+                'USD'
+            );
+            
+            // Convert commission to USD
+            $commissionExchange = $this->currencyService->exchange(
+                $operation->agent_commission,
+                $operation->currency_code,
+                'USD'
+            );
+            
+            $amountInUSD = $amountExchange['total'] ?? $operation->amount;
+            $commissionInUSD = $commissionExchange['total'] ?? $operation->agent_commission;
+        } else {
+            $amountInUSD = floatval($operation->amount);
+            $commissionInUSD = floatval($operation->agent_commission);
+        }
+        
+        if ($operation->operation_type === 'deposit') {
+            $totalDepositsUSD += $amountInUSD;
+        } else {
+            $totalWithdrawalsUSD += $amountInUSD;
+        }
+        
+        $totalCommissionUSD += $commissionInUSD;
+    }
+    
     return response()->json([
         'success' => true,
         'data' => $cashOperations->items(),
+        'stats' => [
+            'total_commission_usd' => round($totalCommissionUSD, 2),
+            'total_deposits_usd' => round($totalDepositsUSD, 2),
+            'total_withdrawals_usd' => round($totalWithdrawalsUSD, 2),
+            'net_flow_usd' => round($totalDepositsUSD - $totalWithdrawalsUSD, 2),
+            'total_operations' => $cashOperations->total(),
+        ],
         'meta' => [
             'total' => $cashOperations->total(),
             'current_page' => $cashOperations->currentPage(),
