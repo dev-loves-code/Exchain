@@ -231,6 +231,14 @@ class WalletToPersonService
     public function verifyTransaction($reference_code)
     {
         $transaction_id = $this->decodeReferenceCode($reference_code);
+
+        $refund_request = RefundRequest::where("transaction_id", $transaction_id)->first();
+        if($refund_request){
+            return response()->json([
+                'success' => false,
+                'errors' => 'A refund request has been issued for this transaction. Please Wait.'
+            ], 400);
+        }
         if (!$transaction_id) {
             return response()->json([
                 'success' => false,

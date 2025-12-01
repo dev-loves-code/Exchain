@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\AgentProfileService;
+use App\Services\EmailService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -153,6 +154,32 @@ class AgentProfileController extends Controller
                 'message' => 'Profile not found',
             ], 404);
         }
+
+        // Notifications Area
+        $emailService = app(EmailService::class);
+
+        if ($request->status === 'accepted') {
+            $payload = [
+                'title' => 'Agent Application Approved',
+                'subtitle' => 'Welcome to the Exchain Agent Program',
+                'message' => 'Congratulations! Your agent application has been accepted. You can now access your agent dashboard.',
+                'cta_url' => url('/admin/agents'), // make changes if changed,
+                'cta_text' => 'Go to Dashboard'
+            ];
+        }else{
+            $payload = [
+                'title' => 'Agent Application Update',
+                'subtitle' => 'Your Agent Application Status',
+                'message' => 'We appreciate your interest in joining our agent program. Unfortunately, your application was not approved at this time.',
+                'cta_url' => url('/admin/agents'), // make changes if changed,
+                'cta_text' => 'Go to Dashboard'
+            ];
+
+        }
+
+        $emailService->sendAgentApproval($request->user(), $payload);
+
+        // End Notifications Area
 
         return response()->json([
             'success' => true,
