@@ -19,100 +19,110 @@ class CashOperationController extends Controller
     }
 
     public function create(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|exists:users,user_id',
-            'wallet_id' => 'required|exists:wallets,wallet_id',
-            'operation_type' => 'required|in:deposit,withdrawal',
-            'amount' => 'required|numeric|min:0.01',
-            'currency_code' => 'required|string|size:3', 
-        ]);
+{
+    $request->validate([
+        'user_id' => 'required|exists:users,user_id',
+        'wallet_id' => 'required|exists:wallets,wallet_id',
+        'operation_type' => 'required|in:deposit,withdrawal',
+        'amount' => 'required|numeric|min:0.01',
+        'currency_code' => 'required|string|size:3', 
+    ]);
 
-        
-        $isValidCurrency = $this->currencyService->isValidCurrency($request->currency_code);
-        if ($isValidCurrency->getData()->success === false) {
-            return $isValidCurrency;
-        }
-
-        $wallet = \App\Models\Wallet::findOrFail($request->wallet_id);
-        
-        
-        $rate_id = null;
-        $exchange_rate = 1;
-        $wallet_amount = $request->amount; 
-
-        if ($request->currency_code !== $wallet->currency_code) {
-            if ($request->operation_type === 'deposit') {
-                // User gives cash in currency_code, wallet receives in wallet currency
-                $exchangeResult = $this->currencyService->exchange(
-                    $request->amount,
-                    $request->currency_code,
-                    $wallet->currency_code
-                );
-                
-                if (isset($exchangeResult['success']) && $exchangeResult['success'] === false) {
-                    return response()->json($exchangeResult, 500);
-                }
-                
-                $wallet_amount = $exchangeResult['total'];
-                $exchange_rate = $exchangeResult['exchange_rate'];
-                $rate_id = $exchangeResult['rate_id'];
-            } else {
-                // Withdrawal: wallet pays in wallet currency, user receives cash in currency_code
-                $exchangeResult = $this->currencyService->exchange(
-                    $request->amount,
-                    $request->currency_code,
-                    $wallet->currency_code
-                );
-                
-                if (isset($exchangeResult['success']) && $exchangeResult['success'] === false) {
-                    return response()->json($exchangeResult, 500);
-                }
-                
-                $wallet_amount = $exchangeResult['total'];
-                $exchange_rate = $exchangeResult['exchange_rate'];
-                $rate_id = $exchangeResult['rate_id'];
-            }
-        }
-
-        
-        $agentProfile = $request->user()->agentProfile;
-        $commissionRate = $agentProfile->commission_rate ?? 0;
-        $commissionValue = ($commissionRate / 100) * $request->amount;
-
-        
-        if ($request->operation_type === 'withdrawal' && $wallet->balance < $wallet_amount) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Insufficient funds in the wallet for this withdrawal',
-            ], 400);
-        }
-
-        $cashOp = \App\Models\CashOperation::create([
-            'user_id' => $request->user_id,
-            'wallet_id' => $request->wallet_id,
-            'agent_id' => $request->user()->user_id,
-            'operation_type' => $request->operation_type,
-            'amount' => $request->amount, 
-            'currency_code' => $request->currency_code, 
-            'wallet_amount' => $wallet_amount, // Amount in wallet currency
-            'exchange_rate' => $exchange_rate,
-            'rate_id' => $rate_id,
-            'agent_commission' => $commissionValue,
-            'status' => 'pending',
-        ]);
-
+    // Check if the wallet belongs to the given user
+    $wallet = \App\Models\Wallet::where('wallet_id', $request->wallet_id)
+        ->where('user_id', $request->user_id)
+        ->first();
+    
+    if (!$wallet) {
         return response()->json([
-            'success' => true,
-            'cash_operation' => $cashOp,
-            'details' => [
-                'cash_amount' => $request->amount . ' ' . $request->currency_code,
-                'wallet_amount' => $wallet_amount . ' ' . $wallet->currency_code,
-                'exchange_rate' => $exchange_rate,
-                'commission' => $commissionValue . ' ' . $request->currency_code,
-            ]
-        ]);
+            'success' => false,
+            'message' => 'Wallet not found or does not belong to the specified user',
+        ], 404);
     }
+    
+    // Rest of the code remains the same...
+    $isValidCurrency = $this->currencyService->isValidCurrency($request->currency_code);
+    if ($isValidCurrency->getData()->success === false) {
+        return $isValidCurrency;
+    }
+
+    // Remove the redundant findOrFail since we already have the wallet
+    // $wallet = \App\Models\Wallet::findOrFail($request->wallet_id);
+    
+    $rate_id = null;
+    $exchange_rate = 1;
+    $wallet_amount = $request->amount; 
+
+    if ($request->currency_code !== $wallet->currency_code) {
+        if ($request->operation_type === 'deposit') {
+            // User gives cash in currency_code, wallet receives in wallet currency
+            $exchangeResult = $this->currencyService->exchange(
+                $request->amount,
+                $request->currency_code,
+                $wallet->currency_code
+            );
+            
+            if (isset($exchangeResult['success']) && $exchangeResult['success'] === false) {
+                return response()->json($exchangeResult, 500);
+            }
+            
+            $wallet_amount = $exchangeResult['total'];
+            $exchange_rate = $exchangeResult['exchange_rate'];
+            $rate_id = $exchangeResult['rate_id'];
+        } else {
+            // Withdrawal: wallet pays in wallet currency, user receives cash in currency_code
+            $exchangeResult = $this->currencyService->exchange(
+                $request->amount,
+                $request->currency_code,
+                $wallet->currency_code
+            );
+            
+            if (isset($exchangeResult['success']) && $exchangeResult['success'] === false) {
+                return response()->json($exchangeResult, 500);
+            }
+            
+            $wallet_amount = $exchangeResult['total'];
+            $exchange_rate = $exchangeResult['exchange_rate'];
+            $rate_id = $exchangeResult['rate_id'];
+        }
+    }
+
+    $agentProfile = $request->user()->agentProfile;
+    $commissionRate = $agentProfile->commission_rate ?? 0;
+    $commissionValue = ($commissionRate / 100) * $request->amount;
+
+    if ($request->operation_type === 'withdrawal' && $wallet->balance < $wallet_amount) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Insufficient funds in the wallet for this withdrawal',
+        ], 400);
+    }
+
+    $cashOp = \App\Models\CashOperation::create([
+        'user_id' => $request->user_id,
+        'wallet_id' => $request->wallet_id,
+        'agent_id' => $request->user()->user_id,
+        'operation_type' => $request->operation_type,
+        'amount' => $request->amount, 
+        'currency_code' => $request->currency_code, 
+        'wallet_amount' => $wallet_amount, // Amount in wallet currency
+        'exchange_rate' => $exchange_rate,
+        'rate_id' => $rate_id,
+        'agent_commission' => $commissionValue,
+        'status' => 'pending',
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'cash_operation' => $cashOp,
+        'details' => [
+            'cash_amount' => $request->amount . ' ' . $request->currency_code,
+            'wallet_amount' => $wallet_amount . ' ' . $wallet->currency_code,
+            'exchange_rate' => $exchange_rate,
+            'commission' => $commissionValue . ' ' . $request->currency_code,
+        ]
+    ]);
+}
 
     public function approve(Request $request, $id)
     {
