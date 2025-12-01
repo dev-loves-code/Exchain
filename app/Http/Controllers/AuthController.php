@@ -304,4 +304,47 @@ class AuthController extends Controller
             return null;
         }
     }
+
+    
+public function getUser(Request $request, $id)
+{
+    $authenticatedUser = $request->user();
+    
+    
+    $allowedRoles = ['admin', 'agent'];
+    $authenticatedRole = $authenticatedUser->role->role_name;
+    
+    
+    if ($authenticatedUser->user_id != $id && !in_array($authenticatedRole, $allowedRoles)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized to view this user',
+        ], 403);
+    }
+    
+    
+    $user = User::with('role')->find($id);
+    
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'User not found',
+        ], 404);
+    }
+    
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'user' => [
+                'user_id' => $user->user_id,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'phone_number' => $user->phone_number,
+                'role' => $user->role->role_name,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+            ],
+        ],
+    ], 200);
+}
 }

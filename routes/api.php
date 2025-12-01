@@ -73,6 +73,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
+        Route::get('/users/{id}', [AuthController::class, 'getUser']);
     });
 
     // Dashboard routes
