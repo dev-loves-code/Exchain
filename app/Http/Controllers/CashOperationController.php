@@ -193,4 +193,95 @@ class CashOperationController extends Controller
 
         return response()->json(['success' => true, 'cash_operation' => $cashOp]);
     }
+
+
+    public function getUserCashOperations(Request $request)
+{
+    $userId = $request->user()->user_id;
+    
+    $query = CashOperation::where('user_id', $userId)
+        ->with('wallet'); // Load wallet info
+    
+    
+    if ($request->has('status')) {
+        $query->where('status', $request->query('status'));
+    }
+    
+    
+    if ($request->has('operation_type')) {
+        $query->where('operation_type', $request->query('operation_type'));
+    }
+    
+    
+    if ($request->has('start_date')) {
+        $query->whereDate('created_at', '>=', $request->query('start_date'));
+    }
+    
+    if ($request->has('end_date')) {
+        $query->whereDate('created_at', '<=', $request->query('end_date'));
+    }
+    
+   
+    $perPage = $request->query('per_page', 20);
+    $cashOperations = $query->orderBy('created_at', 'desc')->paginate($perPage);
+    
+    return response()->json([
+        'success' => true,
+        'data' => $cashOperations->items(),
+        'meta' => [
+            'total' => $cashOperations->total(),
+            'current_page' => $cashOperations->currentPage(),
+            'per_page' => $cashOperations->perPage(),
+            'last_page' => $cashOperations->lastPage(),
+        ]
+    ]);
+}
+
+
+public function getAgentCashOperations(Request $request)
+{
+    $agentId = $request->user()->user_id;
+    
+    $query = CashOperation::where('agent_id', $agentId)
+        ->with(['user', 'wallet']); // Load user and wallet info
+    
+    
+    if ($request->has('status')) {
+        $query->where('status', $request->query('status'));
+    }
+    
+    
+    if ($request->has('operation_type')) {
+        $query->where('operation_type', $request->query('operation_type'));
+    }
+    
+    
+    if ($request->has('user_id')) {
+        $query->where('user_id', $request->query('user_id'));
+    }
+    
+    
+    if ($request->has('start_date')) {
+        $query->whereDate('created_at', '>=', $request->query('start_date'));
+    }
+    
+    if ($request->has('end_date')) {
+        $query->whereDate('created_at', '<=', $request->query('end_date'));
+    }
+    
+    
+    $perPage = $request->query('per_page', 20);
+    $cashOperations = $query->orderBy('created_at', 'desc')->paginate($perPage);
+    
+    return response()->json([
+        'success' => true,
+        'data' => $cashOperations->items(),
+        'meta' => [
+            'total' => $cashOperations->total(),
+            'current_page' => $cashOperations->currentPage(),
+            'per_page' => $cashOperations->perPage(),
+            'last_page' => $cashOperations->lastPage(),
+        ]
+    ]);
+}
 }

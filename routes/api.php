@@ -104,6 +104,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::prefix('user')->middleware(['role:user'])->group(function () {
         Route::post('cash-operations/{id}/approve', [CashOperationController::class, 'approve']);
         Route::post('cash-operations/{id}/reject', [CashOperationController::class, 'reject']);
+        Route::get('/cash-operations', [CashOperationController::class, 'getUserCashOperations']);
     });
 
     // Agent-specific routes
@@ -113,6 +114,7 @@ Route::middleware(['jwt'])->group(function () {
         Route::put('profile', [AgentProfileController::class, 'updateProfile']);
         Route::post('cash-operations', [CashOperationController::class, 'create']);
         Route::post('cash-operations/{id}/cancel', [CashOperationController::class, 'cancel']);
+        Route::get('/cash-operations', [CashOperationController::class, 'getAgentCashOperations']);
     });
 
     // Transactions
