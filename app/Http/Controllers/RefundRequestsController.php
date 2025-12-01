@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\RefundRequest;
 use App\Models\Transaction;
 use App\Models\Wallet;
+use App\Services\EmailService;
 use App\Services\RefundRequestService;
 use Exception;
 use Illuminate\Http\Request;
@@ -193,6 +194,20 @@ class RefundRequestsController extends Controller
                 $validated['rejected_reason']??null
             );
 
+            // Notification Area Start
+            $emailService = app(EmailService::class);
+            $payload = [
+                'title' => 'Your Refund Request Update',
+                'subtitle' => 'Here is the result of your refund review.',
+                'status' => 'rejected',
+                'message' => 'Unfortunately, your refund request could not be approved based on our policy.',
+                'cta_url' => url('/admin/agents'), // make changes if changed,
+                'cta_text' => 'View Details'
+            ];
+            $emailService->sendRefundRequest($request->user(), $payload);
+
+            // End Notification Area
+
             return response() -> json([
                 'success' => true,
                 'message' => 'Refund request rejected',
@@ -212,6 +227,20 @@ class RefundRequestsController extends Controller
         try{
 
             $refundRequest = $this->refundRequestService->processRefund($id);
+
+            // Notification Area Start
+            $emailService = app(EmailService::class);
+            $payload = [
+                'title' => 'Your Refund Request Update',
+                'subtitle' => 'Here is the result of your refund review.',
+                'status' => 'approved', // or 'rejected'
+                'message' => 'We’re happy to let you know that your refund has been approved.',
+                'cta_url' => url('/admin/agents'), // make changes if changed,
+                'cta_text' => 'View Details'
+            ];
+            $emailService->sendRefundRequest($request->user(), $payload);
+
+            // End Notification Area
 
             return response() -> json([
                 'success' => true,

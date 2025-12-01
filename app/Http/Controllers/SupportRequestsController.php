@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\SupportRequest;
+use App\Models\User;
+use App\Services\EmailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -36,6 +38,22 @@ class SupportRequestsController extends Controller
             'description' => $request->description,
             'status' => 'pending',
         ]);
+
+        // Notification Area Start
+
+        $emailService = app(EmailService::class);
+        $payload = [
+            'subject' => $support->subject ?? 'Issue with Wallet Transfer',
+            'description' => $support->description ?? 'The user reports that a recent wallet-to-person transaction did not go through. Please investigate the payment logs and respond accordingly.',
+            'email' => $request->user()->email ?? 'user@example.com',
+            'cta_url' => url('/admin/support-requests/' . ($support->id ?? 0)),
+            'cta_text' => 'View Request',
+            'note' => 'This is an automated notification regarding a new support request.',
+        ];
+        $admin = User::where('role_id',1)->firstOrFail();
+        $emailService->sendSupportRequest($admin, $payload);
+
+        // End Notification Area
 
         // Returning response
         return response()->json([

@@ -10,7 +10,7 @@ use Nette\Schema\ValidationException;
 
 class RefundRequestService
 {
-        
+
 
         public function rejectRefundRequest($refund_id, $reject_reason = null)
         {

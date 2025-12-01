@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\EmailService;
 use App\Services\WalletToPersonService;
 use Exception;
 use Illuminate\Http\Request;
@@ -82,6 +83,10 @@ class TransactionController extends Controller
 
     // Wallet To Person
 
+    private function generateReferenceCode($transaction_id)
+    {
+        return 'REF-' . str_pad($transaction_id, 8, '0', STR_PAD_LEFT);
+    }
     public function initiateWalletToPersonTransfer(Request $request){
 
         $validator = Validator::make($request->all(), [
@@ -91,6 +96,9 @@ class TransactionController extends Controller
             'currency_code' => 'required|string|size:3',
             'service_id' => 'required|integer|exists:services,service_id',
             'include_fees' => 'required|boolean',
+        ],
+        [
+            'transfer_amount.min' => 'The transfer amount must be at least 5.',
         ]);
 
         if ($validator->fails()) {
@@ -114,7 +122,24 @@ class TransactionController extends Controller
                 $request->service_id,
                 $request->include_fees);
 
-            // Add Notification here Priority 1 <---------------------------------------------------------------------
+            // Notification Area Start
+            $emailService = app(EmailService::class);
+            $payload = [
+                'title' => 'Money Transfer Receipt',
+                'subtitle' => 'Wallet-to-Person Transaction',
+                'message' => 'You have received money through Exchain. Please use the transaction number below as a reference to collect your funds.',
+                'receiver_name' => $transaction->receiver_name ?? $request->receiver_email ?? 'N/A',
+                'receiver_email' => $transaction->receiver_email ?? $request->receiver_email ?? 'N/A',
+                'transaction_id' => $this->generateReferenceCode($transaction->transaction_id),
+                'received_amount' => $transaction->received_amount ?? $request->transfer_amount ?? 0,
+                'currency' => $transaction->currency_code ?? $request->currency_code ?? 'USD',
+                'cta_url' => url('/transactions/show'),
+                'cta_text' => 'View Transaction',
+                'note' => 'This is an automated receipt. Please do not reply to this email.',
+            ];
+
+            $emailService->sendWalletToPerson($request->user(), $payload);
+
 
             return response() -> json([
                 'success' => true,
