@@ -347,4 +347,190 @@ public function getUser(Request $request, $id)
         ],
     ], 200);
 }
+
+
+
+public function getMyProfile(Request $request)
+{
+    $user = $request->user();
+    
+    
+    $userData = [
+        'user_id' => $user->user_id,
+        'full_name' => $user->full_name,
+        'email' => $user->email,
+        'phone_number' => $user->phone_number,
+        'role' => $user->role->role_name,
+        'created_at' => $user->created_at,
+        'updated_at' => $user->updated_at,
+    ];
+    
+    
+    if ($user->role->role_name === 'agent') {
+        $agentProfile = $user->agentProfile;
+        if ($agentProfile) {
+            $userData['agent_profile'] = [
+                'business_name' => $agentProfile->business_name,
+                'business_license' => $agentProfile->business_license,
+                'address' => $agentProfile->address,
+                'city' => $agentProfile->city,
+                'working_hours_start' => $agentProfile->working_hours_start,
+                'working_hours_end' => $agentProfile->working_hours_end,
+                'commission_rate' => $agentProfile->commission_rate,
+                'status' => $agentProfile->status,
+                'latitude' => $agentProfile->latitude,
+                'longitude' => $agentProfile->longitude,
+            ];
+        }
+    }
+    
+    return response()->json([
+        'success' => true,
+        'data' => $userData,
+    ], 200);
+}
+
+
+public function updateMyProfile(Request $request)
+{
+    $user = $request->user();
+    
+    
+    $validationRules = [
+        'full_name' => 'sometimes|string|max:255',
+        'phone_number' => 'sometimes|string|max:20|unique:users,phone_number,' . $user->user_id . ',user_id',
+    ];
+    
+    
+    if ($request->has('email')) {
+        $validationRules['email'] = 'sometimes|string|email|max:255|unique:users,email,' . $user->user_id . ',user_id';
+    }
+    
+    
+    if ($user->role->role_name === 'agent') {
+        $validationRules = array_merge($validationRules, [
+            'business_name' => 'sometimes|string|max:200',
+            'business_license' => 'nullable|string|max:100',
+            'address' => 'nullable|string',
+            'city' => 'nullable|string|max:100',
+            'working_hours_start' => 'nullable|date_format:H:i',
+            'working_hours_end' => 'nullable|date_format:H:i',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
+    }
+    
+    $validator = Validator::make($request->all(), $validationRules);
+    
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+    
+    
+    \DB::beginTransaction();
+    
+    try {
+        
+        $userUpdates = [];
+        
+        if ($request->has('full_name')) {
+            $userUpdates['full_name'] = $request->full_name;
+        }
+        
+        if ($request->has('phone_number')) {
+            $userUpdates['phone_number'] = $request->phone_number;
+        }
+        
+        if ($request->has('email')) {
+            $userUpdates['email'] = $request->email;
+           
+        }
+        
+        if (!empty($userUpdates)) {
+            $user->update($userUpdates);
+        }
+        
+        
+        if ($user->role->role_name === 'agent') {
+            $agentProfile = $user->agentProfile;
+            
+            if ($agentProfile) {
+                $agentUpdates = [];
+                
+                $agentFields = [
+                    'business_name',
+                    'business_license',
+                    'address',
+                    'city',
+                    'working_hours_start',
+                    'working_hours_end',
+                    'latitude',
+                    'longitude'
+                ];
+                
+                foreach ($agentFields as $field) {
+                    if ($request->has($field)) {
+                        // Handle nullable fields
+                        $value = $request->input($field);
+                        $agentUpdates[$field] = ($value === '' || $value === null) ? null : $value;
+                    }
+                }
+                
+                if (!empty($agentUpdates)) {
+                    $agentProfile->update($agentUpdates);
+                }
+            }
+        }
+        
+        \DB::commit();
+        
+        
+        $user->refresh();
+        
+        $responseData = [
+            'user_id' => $user->user_id,
+            'full_name' => $user->full_name,
+            'email' => $user->email,
+            'phone_number' => $user->phone_number,
+            'role' => $user->role->role_name,
+            'updated_at' => $user->updated_at,
+        ];
+        
+        
+        if ($user->role->role_name === 'agent') {
+            $agentProfile = $user->agentProfile;
+            if ($agentProfile) {
+                $responseData['agent_profile'] = [
+                    'business_name' => $agentProfile->business_name,
+                    'business_license' => $agentProfile->business_license,
+                    'address' => $agentProfile->address,
+                    'city' => $agentProfile->city,
+                    'working_hours_start' => $agentProfile->working_hours_start,
+                    'working_hours_end' => $agentProfile->working_hours_end,
+                    'commission_rate' => $agentProfile->commission_rate,
+                    'status' => $agentProfile->status,
+                    'latitude' => $agentProfile->latitude,
+                    'longitude' => $agentProfile->longitude,
+                ];
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile updated successfully',
+            'data' => $responseData,
+        ], 200);
+        
+    } catch (\Exception $e) {
+        \DB::rollBack();
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update profile: ' . $e->getMessage(),
+        ], 500);
+    }
+}
 }
