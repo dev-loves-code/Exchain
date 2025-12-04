@@ -112,6 +112,16 @@ class CashOperationController extends Controller
         'status' => 'pending',
     ]);
 
+    // in app notifications
+    $customer = \App\Models\User::find($request->user_id);
+    $notificationService = app(\App\Services\NotificationService::class);
+
+    $notificationService->createNotification(
+        $customer,
+        'Cash Operation Created',
+        "Your {$request->operation_type} request of {$request->amount} {$request->currency_code} has been created and is pending approval."
+    );
+
     return response()->json([
         'success' => true,
         'cash_operation' => $cashOp,

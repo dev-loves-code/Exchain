@@ -55,18 +55,52 @@ class TransactionController extends Controller
             $request->currency_code
         );
 
+        //notify reciever
+        $notificationService = app(\App\Services\NotificationService::class);
+        $receiverWallet = \App\Models\Wallet::with('user')->find($request->receiver_wallet_id);
+        $receiver = $receiverWallet->user;
+        $notificationService->createNotification(
+            $receiver,
+            'Wallet-to-Wallet Transfer Initiated',
+            "A wallet-to-wallet transfer of {$request->amount} {$request->currency_code} has been initiated to your wallet. Please approve or reject the transfer in your transactions."
+        );
+
         return $transfer;
     }
 
     //receiver accepts the transfer
     public function approveWalletToWalletTransfer(Request $request, $id){
         $approval= $this->walletToWalletService->approveTransfer($id, $request->user()->user_id);
+
+        //notify sender
+        $notificationService = app(\App\Services\NotificationService::class);
+        $transfer = \App\Models\WalletToWallet::with('senderWallet.user')->find($id);
+        $sender = $transfer->senderWallet->user;
+        $notificationService->createNotification(
+            $sender,
+            'Wallet-to-Wallet Transfer Approved',
+            "Your wallet-to-wallet transfer of {$transfer->amount} {$transfer->currency_code} has been approved by the receiver."
+        );
+
+
         return $approval;
     }
 
     //receiver rejects the transfer
     public function rejectWalletToWalletTransfer(Request $request, $id){
         $rejection = $this->walletToWalletService->rejectTransfer($id, $request->user()->user_id);
+
+        //notify sender
+        $notificationService = app(\App\Services\NotificationService::class);
+        $transfer = \App\Models\WalletToWallet::with('senderWallet.user')->find($id);
+        $sender = $transfer->senderWallet->user;
+        $notificationService->createNotification(
+            $sender,
+            'Wallet-to-Wallet Transfer Rejected',
+            "Your wallet-to-wallet transfer of {$transfer->amount} {$transfer->currency_code} has been rejected by the receiver."
+        );
+
+
         return $rejection;
     }
 
@@ -212,6 +246,16 @@ class TransactionController extends Controller
         return $this->walletToPersonService->completeWalletToPersonTransactions(
             $request->transaction_id,
             $request->user()->user_id
+        );
+
+        //notify user
+        $notificationService = app(\App\Services\NotificationService::class);
+        $transaction = \App\Models\WalletToPerson::with('wallet.user')->find($request->transaction_id);
+        $user = $transaction->wallet->user;
+        $notificationService->createNotification(
+            $user,
+            'Wallet-to-Person Transaction Completed',
+            "Your wallet-to-person transaction of {$transaction->received_amount} {$transaction->currency_code} has been completed. You can now access the funds."
         );
 
     }

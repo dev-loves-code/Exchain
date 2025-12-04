@@ -57,8 +57,25 @@ class RefundRequestsController extends Controller
 
         ],201);
 
+        
+
         // Notification for user and admin
         //<---------------------------------------------->
+
+        $notificationService = app(\App\Services\NotificationService::class);
+
+        $transaction = Transaction::with('user')->find($request->transaction_id);
+
+        $user = $transaction->user;
+
+        $admins = User::where('role_id', 1)->get();
+        foreach ($admins as $admin) {
+            $notificationService->createNotification(
+                $admin,
+                'New Refund Request',
+                "A new refund request has been submitted for transaction ID: {$transaction->transaction_id} by user {$user->full_name}."
+            );
+        }
     }
 
     // Single Refund request
@@ -195,6 +212,15 @@ class RefundRequestsController extends Controller
             );
 
             // Notification Area Start
+            $notificationService = app(\App\Services\NotificationService::class);
+            $refundRequest = RefundRequest::with('transaction.user')->find($id);
+            $user = $refundRequest->transaction->user;
+            $notificationService->createNotification(
+                $user,
+                'Refund Request Rejected',
+                "Your refund request for transaction ID: {$refundRequest->transaction_id} has been rejected."
+            );
+
             $emailService = app(EmailService::class);
             $payload = [
                 'title' => 'Your Refund Request Update',
@@ -229,6 +255,16 @@ class RefundRequestsController extends Controller
             $refundRequest = $this->refundRequestService->processRefund($id);
 
             // Notification Area Start
+            $notificationService = app(\App\Services\NotificationService::class);
+            $refundRequest = RefundRequest::with('transaction.user')->find($id);
+            $user = $refundRequest->transaction->user;
+            $notificationService->createNotification(
+                $user,
+                'Refund Request Completed',
+                "Your refund request for transaction ID: {$refundRequest->transaction_id} has been completed."
+            );
+
+
             $emailService = app(EmailService::class);
             $payload = [
                 'title' => 'Your Refund Request Update',

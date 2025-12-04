@@ -53,6 +53,18 @@ class SupportRequestsController extends Controller
         $admin = User::where('role_id',1)->firstOrFail();
         $emailService->sendSupportRequest($admin, $payload);
 
+
+
+        $notificationService = app(\App\Services\NotificationService::class);
+        $admins = User::where('role_id', 1)->get();
+        foreach ($admins as $admin) {
+            $notificationService->createNotification(
+                $admin,
+                'New Support Request Submitted',
+                "A new support request has been submitted by {$request->user()->full_name}. Subject: {$support->subject}."
+            );
+        }
+
         // End Notification Area
 
         // Returning response
@@ -218,6 +230,15 @@ class SupportRequestsController extends Controller
             'status' => $request->status,
             'updated_at' => now(),
         ]);
+
+        //notify user
+        $notificationService = app(\App\Services\NotificationService::class);
+        $user = User::find($support_request->user_id);
+        $notificationService->createNotification(
+            $user,
+            'Support Request Status Updated',
+            "The status of your support request (ID: {$support_request->support_id}) has been updated to '{$support_request->status}'."
+        );
 
         return response()->json([
            'success' => true,

@@ -133,6 +133,19 @@ class AuthController extends Controller
 
         // Notifications Area
 
+        $notificationService = app(\App\Services\NotificationService::class);
+
+
+        $admins = User::where('role_id', 1)->get();
+
+        foreach ($admins as $admin) {
+        $notificationService->createNotification(
+            $admin,
+            'New Agent Registration',
+            $user->full_name . ' (' . $request->business_name . ') has registered as an agent and is pending approval.',
+        );
+    }
+
         $emailService = app(EmailService::class);
 
         $agentPayload = [
