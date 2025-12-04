@@ -246,8 +246,8 @@ class TransactionController extends Controller
 
         //notify user
         $notificationService = app(\App\Services\NotificationService::class);
-        $transaction = \App\Models\WalletToPerson::with('wallet.user')->find($request->transaction_id);
-        $user = $transaction->wallet->user;
+        $transaction = \App\Models\Transaction::with('senderWallet.user')->find($request->transaction_id);
+        $user = $transaction->senderWallet->user;
         $notificationService->createNotification(
             $user,
             'Wallet-to-Person Transaction Completed',
