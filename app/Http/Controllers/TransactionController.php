@@ -243,10 +243,6 @@ class TransactionController extends Controller
             ], 422);
         }
 
-        return $this->walletToPersonService->completeWalletToPersonTransactions(
-            $request->transaction_id,
-            $request->user()->user_id
-        );
 
         //notify user
         $notificationService = app(\App\Services\NotificationService::class);
@@ -257,6 +253,13 @@ class TransactionController extends Controller
             'Wallet-to-Person Transaction Completed',
             "Your wallet-to-person transaction of {$transaction->received_amount} {$transaction->currency_code} has been completed. You can now access the funds."
         );
+
+        return $this->walletToPersonService->completeWalletToPersonTransactions(
+            $request->transaction_id,
+            $request->user()->user_id
+        );
+
+        
 
     }
 
