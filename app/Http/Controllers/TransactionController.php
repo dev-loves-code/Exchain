@@ -172,7 +172,7 @@ class TransactionController extends Controller
                 'note' => 'This is an automated receipt. Please do not reply to this email.',
             ];
 
-            $emailService->sendWalletToPerson($request->user(), $payload);
+            $emailService->sendWalletToPerson($request->user(), $payload,$request->receiver_email);
 
 
             return response() -> json([

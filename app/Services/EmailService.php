@@ -79,13 +79,13 @@ class EmailService
     /**
       Send wallet-to-person email
      */
-    public function sendWalletToPerson($user, $payload)
+    public function sendWalletToPerson($user, $payload, $email)
     {
         Mail::send('emails.wallet_to_person', [
             'payload' => $payload,
             'user'    => $user
-        ], function ($msg) use ($user, $payload) {
-            $msg->to($user->email)
+        ], function ($msg) use ($email, $payload) {
+            $msg->to($email)
                 ->subject($payload['subject'] ?? 'Wallet Transfer');
         });
     }
