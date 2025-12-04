@@ -232,7 +232,10 @@ class WalletToPersonService
     {
         $transaction_id = $this->decodeReferenceCode($reference_code);
 
-        $refund_request = RefundRequest::where("transaction_id", $transaction_id)->first();
+        $refund_request = RefundRequest::where("transaction_id", $transaction_id)
+            ->where('status', 'pending')
+            ->first();
+        
         if($refund_request){
             return response()->json([
                 'success' => false,
