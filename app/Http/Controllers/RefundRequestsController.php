@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Nette\Schema\ValidationException;
+use App\Models\User; 
 
 class RefundRequestsController extends Controller
 {
@@ -50,23 +51,15 @@ class RefundRequestsController extends Controller
             'status' => 'pending'
         ]);
 
-        return response() -> json([
-            'success' => true,
-            'message' => 'Refund request created!',
-            'data' => $refund_request,
-
-        ],201);
-
-        
 
         // Notification for user and admin
         //<---------------------------------------------->
 
         $notificationService = app(\App\Services\NotificationService::class);
 
-        $transaction = Transaction::with('user')->find($request->transaction_id);
-
-        $user = $transaction->user;
+        
+        $transaction = Transaction::with('senderWallet.user')->find($request->transaction_id);
+        $user = $transaction->senderWallet->user;
 
         $admins = User::where('role_id', 1)->get();
         foreach ($admins as $admin) {
@@ -76,6 +69,17 @@ class RefundRequestsController extends Controller
                 "A new refund request has been submitted for transaction ID: {$transaction->transaction_id} by user {$user->full_name}."
             );
         }
+
+        return response() -> json([
+            'success' => true,
+            'message' => 'Refund request created!',
+            'data' => $refund_request,
+
+        ],201);
+
+        
+
+        
     }
 
     // Single Refund request
@@ -213,8 +217,9 @@ class RefundRequestsController extends Controller
 
             // Notification Area Start
             $notificationService = app(\App\Services\NotificationService::class);
-            $refundRequest = RefundRequest::with('transaction.user')->find($id);
-            $user = $refundRequest->transaction->user;
+            $refundRequest = RefundRequest::find($id);
+            $transaction = Transaction::with('senderWallet.user')->find($refundRequest->transaction_id);
+            $user = $transaction->senderWallet->user;
             $notificationService->createNotification(
                 $user,
                 'Refund Request Rejected',
@@ -256,8 +261,9 @@ class RefundRequestsController extends Controller
 
             // Notification Area Start
             $notificationService = app(\App\Services\NotificationService::class);
-            $refundRequest = RefundRequest::with('transaction.user')->find($id);
-            $user = $refundRequest->transaction->user;
+            $refundRequest = RefundRequest::find($id);
+            $transaction = Transaction::with('senderWallet.user')->find($refundRequest->transaction_id);
+            $user = $transaction->senderWallet->user;
             $notificationService->createNotification(
                 $user,
                 'Refund Request Completed',
