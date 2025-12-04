@@ -131,6 +131,13 @@ class AuthController extends Controller
             'status' => 'pending',
         ]);
 
+
+        \App\Models\Wallet::create([
+            'user_id' => $user->user_id,
+            'balance' => 0.00,  
+            'currency_code' => 'USD',  
+        ]);
+
         // Notifications Area
 
         $notificationService = app(\App\Services\NotificationService::class);
