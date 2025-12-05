@@ -15,9 +15,12 @@ class Beneficiary extends Model
         'user_id',
         'name',
         'email',
+        'payment_method_id',
         'wallet_id',
-        'bank_account',
+        'bank_account_id',
+        'created_at',
     ];
+
 
     public function user(): BelongsTo
     {
@@ -28,4 +31,13 @@ class Beneficiary extends Model
     {
         return $this->belongsTo(Wallet::class, 'wallet_id', 'wallet_id');
     }
+
+    public function bankAccount(): BelongsTo{
+        return $this->belongsTo(BankAccount::class, 'bank_account_id', 'bank_account_id');
+    }
+
+    public function paymentMethod(): BelongsTo{
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id', 'payment_method_id');
+    }
+
 }

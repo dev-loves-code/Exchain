@@ -12,7 +12,7 @@ class CurrencyRateService
 
     public function getCurrencyList(){
         try{
-            
+
             //get all currencies
             $exchangeRates = app(ExchangeRate::class);
             $result = $exchangeRates->currencies();
@@ -38,7 +38,7 @@ class CurrencyRateService
     }
 
     public function isValidCurrency($currency){
-        
+
         $currency = strtoupper($currency);
 
         //validate input
@@ -69,7 +69,7 @@ class CurrencyRateService
     }
 
     public function exchange($amount, $from, $to){
-        
+
         //get the latest exchange rate from the database set by the admin
         $rate = CurrencyRate::where('from_currency', $from)
             ->where('to_currency', $to)
@@ -82,7 +82,7 @@ class CurrencyRateService
             try{
 
             $api = app(ExchangeRate::class);
-            
+
             //get the exchange rate from the API
             $exchange_rate = $api->convert(1, $from, $to);
 
@@ -93,7 +93,7 @@ class CurrencyRateService
                 'exchange_rate' => $exchange_rate,
                 'by_admin' => false,
             ]);
-            
+
             //get its id
             $rate_id = $rate->rate_id;
 

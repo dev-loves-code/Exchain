@@ -27,7 +27,9 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
-
+'openai' => [
+    'key' => env('OPENAI_API_KEY'),
+],
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
@@ -40,5 +42,17 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URL'),
     ],
+    'github' => [
+    'client_id' => env('GITHUB_CLIENT_ID'),
+    'client_secret' => env('GITHUB_CLIENT_SECRET'),
+    'redirect' => env('GITHUB_REDIRECT'),
+],
+
+'twilio' => [
+    'sid' => env('TWILIO_SID'),
+    'auth_token' => env('TWILIO_AUTH_TOKEN'),
+    'from' => env('TWILIO_FROM'),
+    'whatsapp_from' => env('TWILIO_WHATSAPP_FROM'),
+],
 
 ];

@@ -5,9 +5,19 @@ namespace App\Services;
 use App\Events\NotificationSent;
 use App\Models\Notification;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
+use App\Services\WhatsAppService;
+use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
+    protected $whatsapp;
+
+    public function __construct(WhatsAppService $whatsapp)
+    {
+        $this->whatsapp = $whatsapp;
+    }
+
     public function createNotification(User $user, string $title, string $message): Notification
     {
         $notification = Notification::create([
@@ -17,7 +27,14 @@ class NotificationService
             'is_read' => false,
         ]);
 
+        // Real-time in-app broadcast
         broadcast(new NotificationSent($notification));
+
+        // WhatsApp notification (if phone exists)
+        if ($user->phone_number) {
+            $this->whatsapp->sendWhatsAppMessage($user->phone_number, $message);
+            Log::info("WhatsApp sent to: " . $user->phone_number);
+        }
 
         return $notification;
     }
@@ -35,7 +52,6 @@ class NotificationService
 
         if ($notification) {
             $notification->markAsRead();
-
             return true;
         }
 

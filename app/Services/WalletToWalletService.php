@@ -24,13 +24,13 @@ class WalletToWalletService
     }
 
     public function initiateWalletToWalletTransfer($user_id, $sender_wallet_id, $receiver_wallet_id, $amount, $currency){
-        
+
         DB::beginTransaction();
 
         try{
             //check if sender wallet belongs to the user
             $senderWallet = $this->walletService->getUserWallet($user_id, $sender_wallet_id);
-           
+
             if(!$senderWallet){
                 return response()->json([
                     'success' => false,
@@ -53,7 +53,7 @@ class WalletToWalletService
 
             $requested_currency = strtoupper($currency);
             $requested_amount = $amount;
-            
+
             //calculation the amount to send in sender currency
             if($senderWallet->currency_code != $currency){
                 $amount_in_sender_currency = $this->currencyService->exchange($requested_amount, $requested_currency, $senderWallet->currency_code)['total'];
@@ -91,20 +91,20 @@ class WalletToWalletService
                 'sender_wallet_id' => $sender_wallet_id,
                 'receiver_wallet_id' => $receiver_wallet_id,
                 'service_id' => $service->service_id,
-                
+
                 //amount to retreive from sender wallet = amount in sender currency + fee
                 'transfer_amount' => $amount_in_sender_currency,
                 'transfer_fee' => $transfer_fee,
 
                 'received_amount' => $amount_to_credit,
-                
+
                 'exchange_rate' => $exchange_rate, //from the sender to the receiver
                 'status' => 'pending',
             ]);
 
             DB::commit();
 
-            return $transaction; 
+            return $transaction;
 
         }catch(\Exception $exp){
             DB::rollback();
@@ -115,7 +115,7 @@ class WalletToWalletService
     public function approveTransfer($transaction_id, $user_id){
         try{
             DB::beginTransaction();
-            
+
             //get the tranaction
             $transaction = Transaction::findOrFail($transaction_id);
             if($transaction->status !== 'pending'){
@@ -134,7 +134,7 @@ class WalletToWalletService
             $refund_request = RefundRequest::where('transaction_id',$transaction_id)
                ->where('status','pending')
                ->first();
-            
+
             if($refund_request){
                 throw new \Exception('A refund request on this transaction is taking place. Cannot complete right now.');
             }
@@ -142,7 +142,7 @@ class WalletToWalletService
             //update the receiver wallet balance
             $receiver_wallet->balance = $receiver_wallet->balance + $transaction->received_amount;
             $receiver_wallet->save();
-            
+
             //update the transaction status
             $transaction->status = 'done';
             $transaction->save();
@@ -189,15 +189,15 @@ class WalletToWalletService
                     'message' => 'Sender wallet not found',
                 ]);
             }
-            
+
             $refund_request = RefundRequest::where('transaction_id',$transaction_id)
                ->where('status','pending')
                ->first();
-            
+
             if($refund_request){
                 throw new \Exception('A refund request on this transaction is taking place. Cannot complete right now.');
             }
-            
+
             //update the sender wallet balance
             $sender_wallet->balance = $sender_wallet->balance + $transaction->transfer_amount;
             $sender_wallet->save();
@@ -256,7 +256,7 @@ class WalletToWalletService
             'total_transfer_amount' => $total_transfer_amount,
             'total_sent_amount' => $total_transfer_amount + $total_transfer_fee,
         ];
-        
+
     }
 
 }
