@@ -20,6 +20,7 @@ use App\Http\Controllers\AgentDashboardController;
 use App\Http\Controllers\TransactionTrackingController;
 use App\Http\Controllers\GitHubAuthController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\AdminCurrencyRateController;
 use App\Models\Transaction;
 use App\Events\TransactionStatusUpdated;
 use Illuminate\Http\Request;
@@ -159,6 +160,7 @@ Route::middleware(['jwt'])->group(function () {
         Route::post('recharge-wallet', [PaymentController::class, 'rechargeWallet']);
         Route::get('wallet-balance', [PaymentController::class, 'getWalletBalance']);
         Route::get('payment-methods', [PaymentController::class, 'listPaymentMethods']);
+        Route::post('wallet-to-bank',[PaymentController::class,'transferToBank']);
     });
 
     // Support requests
