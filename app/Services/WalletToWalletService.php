@@ -223,30 +223,79 @@ class WalletToWalletService
         }
     }
 
-    public function getWalletTransactions($user_id, $wallet_id, $service_id){
+    public function getWalletTransactions($user_id, $wallet_id)
+    {
+        
+        if ($wallet_id !== null) {
+            $walletExists = Wallet::where('user_id', $user_id)
+                ->where('is_active', true)
+                ->where('wallet_id', $wallet_id)
+                ->exists();
 
-        $wallet = $this->walletService->getUserWallet($user_id, $wallet_id);
-        if(!$wallet){
-            return response()->json([
-                'success' => false,
-                'message' => 'Wallet not found or does not belong to the user',
-            ], 404);
+            if (!$walletExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Wallet not found or does not belong to the user',
+                ], 404);
+            }
         }
 
-        $transactions = Transaction::where('service_id', $service_id)
-            ->where('sender_wallet_id', $wallet_id)
-            ->orWhere('receiver_wallet_id', $wallet_id)
-            ->select('transaction_id','receiver_wallet_id', 'sender_wallet_id', 'transfer_amount', 'transfer_fee',  'received_amount', 'status', 'exchange_rate', 'created_at')
-            ->get();
+        //get transactions for a specific wallet
+        if ($wallet_id !== null) {
+            $walletIds = collect([$wallet_id]);
+        } else {
+            $walletIds = Wallet::where('user_id', $user_id)
+                ->where('is_active', true)
+                ->pluck('wallet_id');
+        }
 
-        $total_received = Transaction::where('receiver_wallet_id', $wallet_id)
+        $transferServiceIds = Service::where('service_type', 'transfer')->pluck('service_id');
+
+        //get transactions
+        $transactions = Transaction::whereIn('service_id', $transferServiceIds)
+            ->where(function ($q) use ($walletIds) {
+                $q->whereIn('sender_wallet_id', $walletIds)
+                ->orWhereIn('receiver_wallet_id', $walletIds);
+            })
+            ->select(
+                'transaction_id',
+                'receiver_wallet_id',
+                'sender_wallet_id',
+                'transfer_amount',
+                'transfer_fee',
+                'received_amount',
+                'status',
+                'exchange_rate',
+                'created_at'
+            )
+            ->get()
+            ->map(function ($tx) use ($walletIds) {
+                // Determine type
+                $isSender = $walletIds->contains($tx->sender_wallet_id);
+                $isReceiver = $walletIds->contains($tx->receiver_wallet_id);
+
+                if ($isSender && $isReceiver) {
+                    $tx->type = "self-transfer";
+                    $tx->currency_code = $tx->senderWallet->currency_code; 
+                } elseif ($isSender) {
+                    $tx->type = "sent";
+                    $tx->currency_code = $tx->senderWallet->currency_code;
+                } else {
+                    $tx->type = "received";
+                    $tx->currency_code = $tx->receiverWallet->currency_code;
+                }
+                return $tx;
+            });
+        $total_received = Transaction::whereIn('receiver_wallet_id', $walletIds)
             ->where('status', 'done')
             ->sum('received_amount');
 
-        $total_transfer_fee = Transaction::where('sender_wallet_id', $wallet_id)
+        $total_transfer_fee = Transaction::whereIn('sender_wallet_id', $walletIds)
             ->sum('transfer_fee');
-        $total_transfer_amount = Transaction::where('sender_wallet_id', $wallet_id)
+
+        $total_transfer_amount = Transaction::whereIn('sender_wallet_id', $walletIds)
             ->sum('transfer_amount');
+
         $total_sent_amount = $total_transfer_amount + $total_transfer_fee;
 
         return [
@@ -254,9 +303,8 @@ class WalletToWalletService
             'total_received_amount' => $total_received,
             'total_transfer_fee' => $total_transfer_fee,
             'total_transfer_amount' => $total_transfer_amount,
-            'total_sent_amount' => $total_transfer_amount + $total_transfer_fee,
+            'total_sent_amount' => $total_sent_amount,
         ];
-
     }
 
 }
