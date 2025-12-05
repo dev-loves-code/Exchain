@@ -162,7 +162,13 @@ Route::middleware(['jwt'])->group(function () {
         Route::get('payment-methods', [PaymentController::class, 'listPaymentMethods']);
         Route::post('wallet-to-bank',[PaymentController::class,'transferToBank']);
     });
-
+    //Curency rate exchage managed by admin
+    Route::prefix('currency/admin')->group(function () {
+        Route::get('rates', [AdminCurrencyRateController::class, 'index']);  
+        Route::post('rates', [AdminCurrencyRateController::class, 'add']);   
+        Route::put('rates/{id}', [AdminCurrencyRateController::class, 'update']);
+        Route::delete('rates/{id}', [AdminCurrencyRateController::class, 'delete']); 
+    });
     // Support requests
     Route::prefix('support')->group(function () {
         Route::post('request', [SupportRequestsController::class, 'store']);

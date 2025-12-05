@@ -14,6 +14,7 @@ class CurrencyRate extends Model
         'from_currency',
         'to_currency',
         'exchange_rate',
+        'by_admin'
     ];
 
     protected $casts = [
