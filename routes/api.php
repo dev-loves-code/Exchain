@@ -127,7 +127,8 @@ Route::middleware(['jwt'])->group(function () {
         Route::put('approve/{id}', [TransactionController::class, 'approveWalletToWalletTransfer']);
         Route::put('reject/{id}', [TransactionController::class, 'rejectWalletToWalletTransfer']);
         Route::get('wallet-to-wallet-history', [TransactionController::class, 'getWalletToWalletTransactions']);
-
+        Route::get('details/{id}', [TransactionController::class, 'getTransactionDetails']);
+        
         // Wallet to Person transfers
         Route::post('initiate-wallet-to-person', [TransactionController::class, 'initiateWalletToPersonTransfer']);
         Route::get('receipt/{id}', [TransactionController::class, 'getReceipt']);
