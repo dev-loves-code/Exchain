@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Nette\Schema\ValidationException;
-use App\Models\User; 
+use App\Models\User;
 
 class RefundRequestsController extends Controller
 {
@@ -57,7 +57,7 @@ class RefundRequestsController extends Controller
 
         $notificationService = app(\App\Services\NotificationService::class);
 
-        
+
         $transaction = Transaction::with('senderWallet.user')->find($request->transaction_id);
         $user = $transaction->senderWallet->user;
 
@@ -77,9 +77,9 @@ class RefundRequestsController extends Controller
 
         ],201);
 
-        
 
-        
+
+
     }
 
     // Single Refund request
@@ -235,7 +235,7 @@ class RefundRequestsController extends Controller
                 'cta_url' => url('/admin/agents'), // make changes if changed,
                 'cta_text' => 'View Details'
             ];
-            $emailService->sendRefundRequest($request->user(), $payload);
+            $emailService->sendRefundRequest($user, $payload);
 
             // End Notification Area
 
@@ -280,7 +280,7 @@ class RefundRequestsController extends Controller
                 'cta_url' => url('/admin/agents'), // make changes if changed,
                 'cta_text' => 'View Details'
             ];
-            $emailService->sendRefundRequest($request->user(), $payload);
+            $emailService->sendRefundRequest($user, $payload);
 
             // End Notification Area
 
