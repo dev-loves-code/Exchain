@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\EmailService;
 use App\Services\WalletToPersonService;
 use Exception;
 use Illuminate\Http\Request;
@@ -17,7 +18,6 @@ class TransactionController extends Controller
 {
     protected $currencyService;
     protected $walletToWalletService;
-
     protected $walletToPersonService;
 
     public function __construct(CurrencyRateService $currencyService, WalletToWalletService $walletToWalletService, WalletToPersonService $walletToPersonService){
@@ -57,20 +57,31 @@ class TransactionController extends Controller
             $request->currency_code
         );
 
+        //notify receiver
+        $notificationService = app(\App\Services\NotificationService::class);
+        $receiverWallet = \App\Models\Wallet::with('user')->find($request->receiver_wallet_id);
+        $receiver = $receiverWallet->user;
+        $notificationService->createNotification(
+            $receiver,
+            'Wallet-to-Wallet Transfer Initiated',
+            "A wallet-to-wallet transfer of {$request->amount} {$request->currency_code} has been initiated to your wallet. Please approve or reject the transfer in your transactions."
+        );
+
         return $transfer;
     }
 
-    //receiver accepts the transfer
-    public function approveWalletToWalletTransfer(Request $request, $id){
-        $approval= $this->walletToWalletService->approveTransfer($id, $request->user()->user_id);
-        return $approval;
-    }
+    // Receiver accepts the transfer
+public function approveWalletToWalletTransfer(Request $request, $id)
+{
+    return $this->walletToWalletService->approveTransfer($id, $request->user()->user_id);
+}
 
-    //receiver rejects the transfer
-    public function rejectWalletToWalletTransfer(Request $request, $id){
-        $rejection = $this->walletToWalletService->rejectTransfer($id, $request->user()->user_id);
-        return $rejection;
-    }
+// Receiver rejects the transfer
+public function rejectWalletToWalletTransfer(Request $request, $id)
+{
+    return $this->walletToWalletService->rejectTransfer($id, $request->user()->user_id);
+}
+
 
     public function getWalletToWalletTransactions(Request $request){
         $user_id = $request->user()->user_id;
@@ -140,6 +151,11 @@ class TransactionController extends Controller
 
     // Wallet To Person
 
+    private function generateReferenceCode($transaction_id)
+    {
+        return 'REF-' . str_pad($transaction_id, 8, '0', STR_PAD_LEFT);
+    }
+
     public function initiateWalletToPersonTransfer(Request $request){
 
         $validator = Validator::make($request->all(), [
@@ -149,6 +165,9 @@ class TransactionController extends Controller
             'currency_code' => 'required|string|size:3',
             'service_id' => 'required|integer|exists:services,service_id',
             'include_fees' => 'required|boolean',
+        ],
+        [
+            'transfer_amount.min' => 'The transfer amount must be at least 5.',
         ]);
 
         if ($validator->fails()) {
@@ -157,8 +176,6 @@ class TransactionController extends Controller
                 'errors' => $validator->errors(),
             ], 422);
         }
-
-
 
         try{
             $user_id = $request->user()->user_id;
@@ -172,14 +189,29 @@ class TransactionController extends Controller
                 $request->service_id,
                 $request->include_fees);
 
-            // Add Notification here Priority 1 <---------------------------------------------------------------------
+            // Send email notification
+            $emailService = app(EmailService::class);
+            $payload = [
+                'title' => 'Money Transfer Receipt',
+                'subtitle' => 'Wallet-to-Person Transaction',
+                'message' => 'You have received money through Exchain. Please use the transaction number below as a reference to collect your funds.',
+                'receiver_name' => $transaction->receiver_name ?? $request->receiver_email ?? 'N/A',
+                'receiver_email' => $transaction->receiver_email ?? $request->receiver_email ?? 'N/A',
+                'transaction_id' => $this->generateReferenceCode($transaction->transaction_id),
+                'received_amount' => $transaction->received_amount ?? $request->transfer_amount ?? 0,
+                'currency' => $transaction->currency_code ?? $request->currency_code ?? 'USD',
+                'cta_url' => url('/transactions/show'),
+                'cta_text' => 'View Transaction',
+                'note' => 'This is an automated receipt. Please do not reply to this email.',
+            ];
+
+            $emailService->sendWalletToPerson($request->user(), $payload, $request->receiver_email);
 
             return response() -> json([
                 'success' => true,
                 'message' => 'Transfer initiated successfully.',
                 'data' => $transaction,
             ]);
-
 
         }catch(Exception $e){
             return response()->json([
@@ -224,7 +256,6 @@ class TransactionController extends Controller
             ], 422);
         }
 
-
         return $this->walletToPersonService->verifyTransaction(
             $request->reference_code,
         );
@@ -242,11 +273,28 @@ class TransactionController extends Controller
             ], 422);
         }
 
+        //notify user
+        try {
+            $notificationService = app(\App\Services\NotificationService::class);
+            $transaction = \App\Models\Transaction::with('senderWallet.user')->find($request->transaction_id);
+            
+            if ($transaction && $transaction->senderWallet && $transaction->senderWallet->user) {
+                $user = $transaction->senderWallet->user;
+                $notificationService->createNotification(
+                    $user,
+                    'Wallet-to-Person Transaction Completed',
+                    "Your wallet-to-person transaction of {$transaction->received_amount} {$transaction->currency_code} has been completed. You can now access the funds."
+                );
+            }
+        } catch (Exception $e) {
+            // Log the error but don't fail the completion
+            \Log::error('Failed to send completion notification: ' . $e->getMessage());
+        }
+
         return $this->walletToPersonService->completeWalletToPersonTransactions(
             $request->transaction_id,
             $request->user()->user_id
         );
-
     }
 
 }
