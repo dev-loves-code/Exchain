@@ -42,7 +42,7 @@ class BeneficiaryController extends Controller
             'email' => 'nullable|string|email|max:150',
             'wallet_id' => 'nullable|integer|exists:wallets,wallet_id',
             'payment_method_id' => 'nullable|integer|exists:payment_methods,payment_method_id',
-            'bank_account_id' => 'nullable|string|exists:bank_accounts,bank_account_id',
+            'bank_account_id' => 'nullable|integer|exists:bank_accounts,bank_account_id',
         ]);
 
         if ($validator->fails()) {

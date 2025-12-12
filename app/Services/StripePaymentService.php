@@ -9,8 +9,9 @@ use App\Models\Wallet;
 use App\Models\PaymentMethod;
 use App\Models\StripePayment;
 use App\Models\BankAccount;
+use App\Models\Beneficiary;
 use App\Models\Transaction;
-use App\Models\Service as ServiceModel;
+use App\Models\Service ;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
@@ -134,13 +135,13 @@ public function transferToBank(
     float $amount,
     int $walletId,
     string $currency,
-    ?int $bankAccountId,
+    ?int $beneficiaryId,
     ?string $externalAccountNumber,
     ?string $externalHolderName,
     ?string $externalBankName
 ): array {
     try {
-        // 1. Fetch wallet
+       //get the wallet chosen
         $wallet = Wallet::where('wallet_id', $walletId)
                         ->where('user_id', $user->user_id)
                         ->firstOrFail();
@@ -150,21 +151,29 @@ public function transferToBank(
             return ['success' => false, 'message' => 'Insufficient balance'];
         }
 
-        // 2. Determine bank account
-        if ($bankAccountId) {
-            // saved bank account
-            $bank = BankAccount::where('bank_account_id', $bankAccountId)
-                               ->firstOrFail();
-            $receiverBankAccount = $bank->account_number;
+        
+        if ($beneficiaryId) {
+            // saved beneficiary with bank account 
+            $beneficiary = Beneficiary::where('beneficiary_id', $beneficiaryId)
+                                     ->where('user_id', $user->user_id)
+                                     ->firstOrFail();
+            
+            if (!$beneficiary->bank_account_id) {
+                return ['success' => false, 'message' => 'Beneficiary does not have a bank account'];
+            }
+            
+            $bankAccount = BankAccount::where('bank_account_id', $beneficiary->bank_account_id)
+                                     ->firstOrFail();
+            $receiverBankAccount = $bankAccount->account_number;
         } else {
-            // external new bank account
+            // external new bank account non existing on the system
             if (!$externalAccountNumber) {
                 return ['success' => false, 'message' => 'Bank account number required'];
             }
             $receiverBankAccount = $externalAccountNumber;
         }
 
-        // 3. Create transaction
+        // creating the transaction
         $transaction = Transaction::create([
             'sender_wallet_id'      => $wallet->wallet_id,
             'receiver_wallet_id'    => null,
@@ -179,11 +188,9 @@ public function transferToBank(
             'status'                => 'pending'
         ]);
 
-        // 4. Deduct from wallet
+        //deduct from wallet if fees exist we should reduce them but i think the bank has his own fees deduction strategy
         $wallet->balance -= $amount;
         $wallet->save();
-
-        // 5. Mark transaction done
         $transaction->update(['status' => 'done']);
 
         return [

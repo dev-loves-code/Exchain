@@ -161,6 +161,7 @@ Route::middleware(['jwt'])->group(function () {
         Route::post('recharge-wallet', [PaymentController::class, 'rechargeWallet']);
         Route::get('wallet-balance', [PaymentController::class, 'getWalletBalance']);
         Route::get('payment-methods', [PaymentController::class, 'listPaymentMethods']);
+        Route::get('stripe-transactions', [PaymentController::class, 'listStripeTransactions']);
         Route::post('wallet-to-bank',[PaymentController::class,'transferToBank']);
     });
     //Curency rate exchage managed by admin
