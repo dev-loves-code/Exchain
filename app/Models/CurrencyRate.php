@@ -8,12 +8,13 @@ class CurrencyRate extends Model
 {
     protected $primaryKey = 'rate_id';
 
-    const UPDATED_AT = null;
+    // const UPDATED_AT = null;
 
     protected $fillable = [
         'from_currency',
         'to_currency',
         'exchange_rate',
+        'by_admin'
     ];
 
     protected $casts = [

@@ -20,6 +20,7 @@ use App\Http\Controllers\AgentDashboardController;
 use App\Http\Controllers\TransactionTrackingController;
 use App\Http\Controllers\GitHubAuthController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\AdminCurrencyRateController;
 use App\Models\Transaction;
 use App\Events\TransactionStatusUpdated;
 use Illuminate\Http\Request;
@@ -160,8 +161,15 @@ Route::middleware(['jwt'])->group(function () {
         Route::post('recharge-wallet', [PaymentController::class, 'rechargeWallet']);
         Route::get('wallet-balance', [PaymentController::class, 'getWalletBalance']);
         Route::get('payment-methods', [PaymentController::class, 'listPaymentMethods']);
+        Route::post('wallet-to-bank',[PaymentController::class,'transferToBank']);
     });
-
+    //Curency rate exchage managed by admin
+    Route::prefix('currency/admin')->group(function () {
+        Route::get('rates', [AdminCurrencyRateController::class, 'index']);  
+        Route::post('rates', [AdminCurrencyRateController::class, 'add']);   
+        Route::put('rates/{id}', [AdminCurrencyRateController::class, 'update']);
+        Route::delete('rates/{id}', [AdminCurrencyRateController::class, 'delete']); 
+    });
     // Support requests
     Route::prefix('support')->group(function () {
         Route::post('request', [SupportRequestsController::class, 'store']);

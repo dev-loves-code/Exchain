@@ -129,8 +129,81 @@ class StripePaymentService
 
     }
 
+public function transferToBank(
+    User $user,
+    float $amount,
+    int $walletId,
+    string $currency,
+    ?int $bankAccountId,
+    ?string $externalAccountNumber,
+    ?string $externalHolderName,
+    ?string $externalBankName
+): array {
+    try {
+        // 1. Fetch wallet
+        $wallet = Wallet::where('wallet_id', $walletId)
+                        ->where('user_id', $user->user_id)
+                        ->firstOrFail();
 
-    
+        $service = Service::findOrFail(1);
+        if ($wallet->balance < $amount) {
+            return ['success' => false, 'message' => 'Insufficient balance'];
+        }
+
+        // 2. Determine bank account
+        if ($bankAccountId) {
+            // saved bank account
+            $bank = BankAccount::where('bank_account_id', $bankAccountId)
+                               ->firstOrFail();
+            $receiverBankAccount = $bank->account_number;
+        } else {
+            // external new bank account
+            if (!$externalAccountNumber) {
+                return ['success' => false, 'message' => 'Bank account number required'];
+            }
+            $receiverBankAccount = $externalAccountNumber;
+        }
+
+        // 3. Create transaction
+        $transaction = Transaction::create([
+            'sender_wallet_id'      => $wallet->wallet_id,
+            'receiver_wallet_id'    => null,
+            'receiver_bank_account' => $receiverBankAccount,
+            'receiver_email'        => null,
+            'agent_id'              => null,
+            'service_id'            => 1, // wallet-to-bank service
+            'transfer_amount'       => $amount,
+            'transfer_fee'          => 0,
+            'received_amount'       => $amount,
+            'exchange_rate'         => null,
+            'status'                => 'pending'
+        ]);
+
+        // 4. Deduct from wallet
+        $wallet->balance -= $amount;
+        $wallet->save();
+
+        // 5. Mark transaction done
+        $transaction->update(['status' => 'done']);
+
+        return [
+            'success' => true,
+            'message' => 'Transfer to bank completed successfully',
+            'data' => [
+                'transaction_id' => $transaction->transaction_id,
+                'wallet_balance' => $wallet->balance,
+                'bank_account'   => $receiverBankAccount
+            ]
+        ];
+
+    } catch (\Exception $e) {
+        return [
+            'success' => false,
+            'message' => 'Transfer failed: '.$e->getMessage()
+        ];
+    }
+}
+
 
     private function storePaymentMethod(User $user, $paymentMethod, string $stripeCustomerId)
      {
