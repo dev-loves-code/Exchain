@@ -93,8 +93,8 @@ config/
 ### Setup
 
 ```bash
-git clone https://github.com/your-repo/exchain-backend.git
-cd exchain-backend
+git clone https://github.com/dev-loves-code/Exchain.git
+cd Exchain
 
 composer install
 cp .env.example .env
